@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { api, ApiError, type ProductDetail } from '../api'
 import { ProductCard } from '../components/ProductCard'
 import { ProductImage } from '../components/ProductImage'
+import { ReviewSection } from '../components/ReviewSection'
 import { useApp } from '../context/AppContext'
 import { BoxIcon, ChevronDownIcon } from '../components/icons'
 import { LOW_STOCK_THRESHOLD, won } from '../format'
@@ -163,6 +164,8 @@ export function ProductDetailPage() {
           </div>
         </section>
       )}
+
+      {product.reviewSummary && <ReviewSection productId={product.id} summary={product.reviewSummary} />}
 
       <details className="detail-section notice-box">
         <summary>배송 · 교환 · 반품 안내<ChevronDownIcon className="chev" /></summary>

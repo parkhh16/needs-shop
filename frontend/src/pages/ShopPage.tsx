@@ -36,7 +36,9 @@ function applyLocal(products: Product[], sort: SortKey, excludeSoldOut: boolean)
     PRICE_ASC: (a, b) => a.price - b.price,
     PRICE_DESC: (a, b) => b.price - a.price,
   }
-  return list.sort(cmp[sort])
+  // 품절(재고 0)은 어떤 정렬이든 맨 뒤. 기존 정렬 기준은 그 안에서 유지한다
+  const gone = (p: Product) => (p.soldOut || p.stock <= 0 ? 1 : 0)
+  return list.sort((a, b) => gone(a) - gone(b) || cmp[sort](a, b))
 }
 
 function ExampleChips({ className, label }: { className: string; label?: string }) {
