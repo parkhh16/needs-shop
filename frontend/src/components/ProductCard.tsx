@@ -20,7 +20,7 @@ export function ProductCard({ product, featured = false }: { product: Product; f
         <ProductImage src={product.thumbnail} alt={product.name} category={product.category} categoryLabel={product.categoryLabel} eager={featured} />
         {(hot || popular) && (
           <div className="card-badges">
-            {hot && <span className="card-badge hot"><FlameIcon />핫딜</span>}
+            {hot && <span className="card-badge hot" role="img" aria-label="핫딜: 할인 중이고 수량이 얼마 남지 않았어요" title="핫딜: 할인 중이고 수량이 얼마 남지 않았어요"><FlameIcon /></span>}
             {popular && <span className="card-badge pop"><TrendIcon />인기</span>}
           </div>
         )}

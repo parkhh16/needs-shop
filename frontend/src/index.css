@@ -285,7 +285,9 @@ code { font-family: ui-monospace, 'Cascadia Code', Consolas, monospace; font-siz
 .card-badges { position: absolute; left: var(--space-2); top: var(--space-2); right: var(--space-2); display: flex; flex-wrap: wrap; gap: var(--space-1); pointer-events: none; }
 .card-badge { display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 var(--space-2) 0 6px; border-radius: var(--radius-pill); font-size: var(--fs-xs); font-weight: var(--fw-bold); line-height: 1; }
 .card-badge svg { width: 14px; height: 14px; flex: none; }
-.card-badge.hot { background: var(--accent); color: var(--on-accent); }
+/* 핫딜은 글자 없이 불꽃만: 사진 위에서 잘 보이게 둥근 면에 흰 테두리와 그림자를 두고 크게 그린다 */
+.card-badge.hot { width: 40px; height: 40px; padding: 0; justify-content: center; background: var(--accent); color: #fff; border: 2px solid #fff; box-shadow: 0 2px 8px rgba(0, 0, 0, .35); }
+.card-badge.hot svg { width: 26px; height: 26px; }
 .card-badge.pop { background: var(--soldout-bg); color: var(--on-solid); }
 .card-rating { display: flex; align-items: center; gap: 4px; font-size: var(--fs-xs); color: var(--muted); font-variant-numeric: tabular-nums; line-height: 1.4; }
 .card-rating.none { margin-top: 0; }
