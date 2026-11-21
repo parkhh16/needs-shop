@@ -72,6 +72,13 @@ public class Product extends BaseTimeEntity {
     @Column(nullable = false)
     private int soldCount;
 
+    /** 후기 개수와 별점 합계. 목록 카드의 평점(합계/개수)을 후기 테이블 집계 없이 만들려고 상품에 같이 둔다 (후기는 시드로만 들어온다) */
+    @Column(name = "review_count", nullable = false)
+    private int reviewCount;
+
+    @Column(name = "rating_sum", nullable = false)
+    private int ratingSum;
+
     /** 1인 구매 제한 수량. null이면 제한 없음 (리셀 방지용 상품별 설정) */
     private Integer perUserLimit;
 
@@ -146,6 +153,17 @@ public class Product extends BaseTimeEntity {
 
     public boolean isSoldOut() {
         return stock <= 0;
+    }
+
+    /** 평균 별점 (소수 첫째 자리 반올림). 후기가 없으면 0 */
+    public double ratingAvg() {
+        return reviewCount == 0 ? 0 : Math.round(ratingSum * 10.0 / reviewCount) / 10.0;
+    }
+
+    /** 후기 시드가 후기와 함께 채운다 */
+    public void applyReviewStats(int reviewCount, int ratingSum) {
+        this.reviewCount = reviewCount;
+        this.ratingSum = ratingSum;
     }
 
     /** 할인율(%). 원가가 없거나 판매가가 더 높으면 0 */

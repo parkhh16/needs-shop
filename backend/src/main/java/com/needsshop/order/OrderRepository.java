@@ -54,6 +54,17 @@ public interface OrderRepository extends JpaRepository<Order, Long>, org.springf
         long getQuantity();
     }
 
+    /**
+     * 인기 배지용: since 이후 결제 완료(PAID)된 주문의 상품별 판매 수량 상위. 읽기 전용 집계라 락을 걸지 않는다.
+     * 인덱스 (status, created_at)으로 최근 PAID 주문만 범위 탐색한다. 결과는 ProductBadgeService가 30초 캐시한다.
+     */
+    @Query("select i.productId as productId, sum(i.quantity) as quantity from OrderItem i join i.order o " +
+            "where o.status = com.needsshop.order.OrderStatus.PAID and o.createdAt >= :since " +
+            "group by i.productId having sum(i.quantity) >= :minQuantity " +
+            "order by sum(i.quantity) desc, i.productId asc")
+    List<ProductHeld> findTopPaidQuantitySince(@Param("since") LocalDateTime since,
+                                               @Param("minQuantity") long minQuantity, Pageable pageable);
+
     @Query("select o.id from Order o where o.status = :status and o.expiresAt < :now order by o.id")
     List<Long> findIdsToExpire(@Param("status") OrderStatus status, @Param("now") LocalDateTime now, Pageable pageable);
 }
