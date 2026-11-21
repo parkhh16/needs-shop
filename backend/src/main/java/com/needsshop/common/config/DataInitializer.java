@@ -34,7 +34,8 @@ import static com.needsshop.product.SubCategory.*;
 
 /**
  * 데모 계정과 상품을 넣는다. 이미 데이터가 있으면 건너뛴다.
- * 일반 상품, 할인 중인 상품(정가 표시), 1인 구매 제한 상품, 품절 상품이 섞이게 한다.
+ * 일반 상품, 할인 중인 상품(정가 표시), 1인 구매 제한 상품, 품절 상품, 재고가 얼마 안 남은 상품(10개 이하, 그중 일부는 할인 = 핫딜)이 섞이게 한다.
+ * 샘플 후기({@link ReviewSeeder})와 인기 배지용 데모 판매({@link DemoSalesSeeder})도 같이 넣는다.
  */
 @Slf4j
 @Component
@@ -48,6 +49,8 @@ public class DataInitializer implements ApplicationRunner {
     private final ObjectMapper objectMapper;
     private final AiSearchService aiSearchService;
     private final ActivityRecorder activityRecorder;
+    private final ReviewSeeder reviewSeeder;
+    private final DemoSalesSeeder demoSalesSeeder;
 
     /** 환경변수 ADMIN_PASSWORD (application.yml에서 연결). 로컬 기본값은 admin, 운영은 ProductionGuard가 강제한다 */
     @org.springframework.beans.factory.annotation.Value("${needsshop.seed.admin-password:admin}")
@@ -61,20 +64,27 @@ public class DataInitializer implements ApplicationRunner {
     @Transactional
     public void run(ApplicationArguments args) {
         if (userRepository.count() > 0) {
+            // 후기 기능이 생기기 전에 만든 DB에도 샘플 후기를 한 번 채운다 (이미 있으면 건너뜀). 샘플 후기는 데모 환경에서만: 운영에서는 가짜 후기를 만들지 않는다
+            if (demoUsers) reviewSeeder.seedIfEmpty();
             return;
         }
         userRepository.save(new User("admin", "admin@needs-shop.com", passwordEncoder.encode(adminPassword), "관리자", User.Role.ADMIN));
+        List<Long> buyerIds = new ArrayList<>();
         if (demoUsers) {
-            userRepository.save(new User("user1", "user1@needs-shop.com", passwordEncoder.encode("user1234!"), "김철수", User.Role.USER));
-            userRepository.save(new User("user2", "user2@needs-shop.com", passwordEncoder.encode("user1234!"), "이영희", User.Role.USER));
+            buyerIds.add(userRepository.save(new User("user1", "user1@needs-shop.com", passwordEncoder.encode("user1234!"), "김철수", User.Role.USER)).getId());
+            buyerIds.add(userRepository.save(new User("user2", "user2@needs-shop.com", passwordEncoder.encode("user1234!"), "이영희", User.Role.USER)).getId());
         }
 
         List<Product> products = products();
         attachImages(products);
         attachTags(products);
         productRepository.saveAll(products);
+        int reviews = demoUsers ? reviewSeeder.seedIfEmpty() : 0;
+        // 인기 배지용 데모 판매 (데모 회원이 있을 때만). 검색 기록보다 먼저 만들어서 검색 응답에도 배지가 반영되게 한다
+        int sales = demoUsers ? demoSalesSeeder.seed(products, buyerIds) : 0;
         int searches = demoUsers ? demoSearches() : 0;
-        log.info("event=SEED_DONE users={} products={} demoSearches={}", demoUsers ? 3 : 1, products.size(), searches);
+        log.info("event=SEED_DONE users={} products={} reviews={} demoSales={} demoSearches={}", demoUsers ? 3 : 1,
+                products.size(), reviews, sales, searches);
     }
 
     /**
@@ -170,11 +180,11 @@ public class DataInitializer implements ApplicationRunner {
                 "클릭 소음 90% 감소",
                 "클릭 소리를 크게 줄인 저소음 스위치를 적용한 무선 마우스입니다.",
                 specs("연결", "2.4GHz 무선", "DPI", "1000", "스위치", "저소음 마이크로 스위치", "배터리", "AA 1개 (최대 18개월)")));
-        list.add(normal("8K 폴링 게이밍 마우스", MOUSE_GAMING, 79_000, 60,
+        list.add(product("8K 폴링 게이밍 마우스", MOUSE_GAMING, 79_000, 95_000L, 8, null,
                 "8000Hz 초고속 응답",
                 "8000Hz 폴링레이트로 입력 지연을 최소화한 하이엔드 게이밍 마우스입니다.",
                 specs("폴링", "8000Hz", "센서", "30K DPI 광학", "무게", "63g", "연결", "유선 / 무선")));
-        list.add(normal("무선 트랙볼 마우스", MOUSE_WIRELESS, 49_000, 90,
+        list.add(normal("무선 트랙볼 마우스", MOUSE_WIRELESS, 49_000, 5,
                 "손목을 움직이지 않는 트랙볼",
                 "엄지로 볼을 굴려 조작하는 트랙볼 마우스입니다. 좁은 책상에서도 편하게 쓸 수 있습니다.",
                 specs("연결", "블루투스 / 2.4GHz", "볼", "34mm", "배터리", "충전식", "버튼", "5개")));
@@ -192,7 +202,7 @@ public class DataInitializer implements ApplicationRunner {
                 "4K UHD, 일시 품절",
                 "넓은 작업 공간이 필요한 디자이너와 개발자를 위한 32인치 4K 모니터입니다.",
                 specs("크기", "32인치", "해상도", "3840x2160", "주사율", "60Hz", "패널", "VA")));
-        list.add(normal("24인치 240Hz 게이밍 모니터", MONITOR_GAMING, 259_000, 40,
+        list.add(normal("24인치 240Hz 게이밍 모니터", MONITOR_GAMING, 259_000, 6,
                 "e스포츠용 240Hz",
                 "0.5ms 응답속도와 240Hz 주사율로 e스포츠 환경에 최적화된 모니터입니다.",
                 specs("크기", "24인치", "해상도", "1920x1080", "주사율", "240Hz", "응답속도", "0.5ms")));
@@ -210,11 +220,11 @@ public class DataInitializer implements ApplicationRunner {
                 "2채널 PC 스피커",
                 "책상 위에 두기 좋은 컴팩트한 2채널 PC 스피커입니다.",
                 specs("채널", "2.0", "출력", "20W", "입력", "3.5mm / USB", "크기", "90x150x100mm")));
-        list.add(product("7.1채널 게이밍 헤드셋", AUDIO_HEADSET, 69_000, 79_000L, 23, null,
+        list.add(product("7.1채널 게이밍 헤드셋", AUDIO_HEADSET, 69_000, 79_000L, 9, null,
                 "가상 7.1채널 서라운드",
                 "가상 7.1채널 서라운드로 발소리 방향을 정확하게 들을 수 있는 게이밍 헤드셋입니다.",
                 specs("채널", "가상 7.1", "드라이버", "50mm", "마이크", "탈착식 단일지향성", "연결", "USB")));
-        list.add(normal("노이즈캔슬링 무선 이어폰", AUDIO_EARPHONE, 129_000, 70,
+        list.add(normal("노이즈캔슬링 무선 이어폰", AUDIO_EARPHONE, 129_000, 3,
                 "하이브리드 ANC 이어폰",
                 "하이브리드 ANC와 공간 음향을 지원하는 프리미엄 무선 이어폰입니다.",
                 specs("연결", "블루투스 5.3", "ANC", "하이브리드", "배터리", "이어폰 8시간 + 케이스 30시간", "방수", "IPX5")));
@@ -236,7 +246,7 @@ public class DataInitializer implements ApplicationRunner {
                 "6단 각도 조절",
                 "노트북 화면을 눈높이로 올려 거북목을 예방하는 알루미늄 거치대입니다.",
                 specs("소재", "알루미늄", "각도", "6단 조절", "지원", "10~17인치", "무게", "600g")));
-        list.add(normal("PBT 키캡 세트", ACCESSORY_ETC, 29_000, 150,
+        list.add(product("PBT 키캡 세트", ACCESSORY_ETC, 29_000, 35_000L, 10, null,
                 "체리 프로파일 135키",
                 "번들거림이 적은 PBT 소재의 체리 프로파일 키캡 세트입니다.",
                 specs("소재", "PBT 이중사출", "프로파일", "체리", "구성", "135키", "호환", "MX 스위치")));

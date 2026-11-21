@@ -10,9 +10,16 @@ export interface Product {
   price: number; originalPrice: number | null; discountRate: number
   stock: number; soldOut: boolean; soldCount: number; description: string; thumbnail: string | null
   perUserLimit: number | null
+  /** 후기 평점(없으면 0)과 개수. 배지는 "HOT_DEAL"(할인 중이고 재고 1~10), "POPULAR"(최근 7일 많이 팔림). 서버가 아직 안 주면 없을 수 있어 옵셔널 */
+  ratingAvg?: number; reviewCount?: number; badges?: string[]
 }
+export interface ReviewSummary { average: number; count: number; distribution: Record<'1' | '2' | '3' | '4' | '5', number> }
+/** 후기는 샘플 데이터다 (작성 기능 없음) */
+export interface Review { rating: number; body: string | null; nickname: string; date: string }
+export interface ReviewPage { items: Review[]; page: number; size: number; total: number; hasNext: boolean }
 export interface ProductDetail extends Product {
   detail: string | null; specs: Record<string, string>; images: string[]; related: Product[]
+  reviewSummary?: ReviewSummary
 }
 export interface CategoryNode { code: string; label: string; count: number; children: CategoryNode[] }
 export interface CategoryTree { total: number; categories: CategoryNode[] }
@@ -103,6 +110,7 @@ export const api = {
   categories: () => request<CategoryTree>('GET', '/api/categories'),
   products: (q: ProductQuery = {}) => request<Product[]>('GET', `/api/products${qs({ ...q })}`),
   product: (id: number) => request<ProductDetail>('GET', `/api/products/${id}`),
+  reviews: (id: number, page = 0, size = 10) => request<ReviewPage>('GET', `/api/products/${id}/reviews?page=${page}&size=${size}`),
   aiSearch: (q: string, correct = true) =>
     request<AiSearchResult>('GET', `/api/products/search?q=${encodeURIComponent(q)}${correct ? '' : '&correct=false'}`),
   createOrder: (productId: number, quantity: number, idempotencyKey: string) =>

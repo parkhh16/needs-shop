@@ -22,6 +22,7 @@ public class ProductController {
 
     private final ProductQueryService productQueryService;
     private final AiSearchService aiSearchService;
+    private final ReviewQueryService reviewQueryService;
 
     @Operation(summary = "상품 목록", description = "category/sub(소분류)/가격대/품절 제외/키워드 필터 + 정렬")
     @GetMapping("/api/products")
@@ -45,6 +46,14 @@ public class ProductController {
     @GetMapping("/api/products/{id}")
     public ProductDetailResponse get(@PathVariable Long id) {
         return productQueryService.detail(id);
+    }
+
+    @Operation(summary = "상품 후기 목록", description = "최신순. size는 최대 20. 후기는 샘플 데이터이고 작성 기능은 없다")
+    @GetMapping("/api/products/{id}/reviews")
+    public ReviewPage reviews(@PathVariable Long id,
+                              @RequestParam(defaultValue = "0") int page,
+                              @RequestParam(defaultValue = "10") int size) {
+        return reviewQueryService.list(id, page, size);
     }
 
     @Operation(summary = "자연어 검색", description = "예: \"5만원 이하 무선 마우스\". 검색할 때 LLM은 부르지 않고, 상품 등록 때 AI가 붙인 태그까지 단어로 찾는다")

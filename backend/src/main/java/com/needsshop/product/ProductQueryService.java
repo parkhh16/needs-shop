@@ -20,11 +20,13 @@ import java.util.stream.Collectors;
 public class ProductQueryService {
 
     private final ProductRepository productRepository;
+    private final ProductBadgeService badgeService;
+    private final ReviewQueryService reviewQueryService;
 
     public List<ProductResponse> search(SearchCondition condition) {
-        return productRepository.findAll(spec(condition)).stream()
+        return badgeService.apply(productRepository.findAll(spec(condition)).stream()
                 .map(ProductResponse::from)
-                .toList();
+                .toList());
     }
 
     /**
@@ -46,9 +48,19 @@ public class ProductQueryService {
     public List<ProductResponse> findAllWords(WordQuery q) {
         List<String> strong = q.words().stream().filter(w -> !SearchText.isWeak(w)).toList();
         List<String> mustMatch = strong.isEmpty() ? q.words() : strong;
-        return productRepository.findAll(scope(q).and(allOf(mustMatch)), PRICE_ASC).stream()
+        return badgeService.apply(soldOutLast(productRepository.findAll(scope(q).and(allOf(mustMatch)), PRICE_ASC)).stream()
                 .map(ProductResponse::from)
-                .toList();
+                .toList());
+    }
+
+    /**
+     * 품절 상품을 맨 뒤로 보낸다. 나머지 순서(가격, id)는 그대로다 (List.sort는 안정 정렬).
+     * 단어 검색은 DB 정렬 키를 직접 조립하지 않고 Sort.by로 받기 때문에, 목록 검색의 {@link #orders}와 같은 규칙을 여기서 맞춘다.
+     */
+    private static List<Product> soldOutLast(List<Product> products) {
+        List<Product> sorted = new ArrayList<>(products);
+        sorted.sort(Comparator.comparing(Product::isSoldOut));
+        return sorted;
     }
 
     /**
@@ -66,10 +78,12 @@ public class ProductQueryService {
         Map<Product, Long> scores = new LinkedHashMap<>();
         candidates.forEach(p -> scores.put(p, q.words().stream().filter(w -> SearchText.matchesAny(p.getSearchText(), w)).count()));
         long best = Collections.max(scores.values());
-        return scores.entrySet().stream()
+        return badgeService.apply(soldOutLast(scores.entrySet().stream()
                 .filter(e -> e.getValue() == best)
-                .map(e -> ProductResponse.from(e.getKey()))
-                .toList();
+                .map(Map.Entry::getKey)
+                .toList()).stream()
+                .map(ProductResponse::from)
+                .toList());
     }
 
     private static final org.springframework.data.domain.Sort PRICE_ASC =
@@ -121,8 +135,8 @@ public class ProductQueryService {
                         PageRequest.of(0, 4))
                 .map(ProductResponse::from)
                 .getContent();
-        return new ProductDetailResponse(ProductResponse.from(product), product.getDetail(),
-                product.getSpecs(), product.getImages(), related);
+        return new ProductDetailResponse(badgeService.apply(ProductResponse.from(product)), product.getDetail(),
+                product.getSpecs(), product.getImages(), badgeService.apply(related), reviewQueryService.summary(id));
     }
 
     /** 사이드바 트리. 상품이 0개인 소분류도 보여줘야 하므로 enum 전체를 기준으로 개수를 채운다 */
@@ -170,10 +184,12 @@ public class ProductQueryService {
 
     private List<Order> orders(Sort sort, jakarta.persistence.criteria.Root<Product> root,
                                jakarta.persistence.criteria.CriteriaBuilder cb) {
+        // 어떤 정렬이든 품절(재고 0 이하)은 맨 뒤. CASE 식은 H2와 MySQL 모두 order by에서 쓸 수 있다
+        Order soldOutLast = cb.asc(cb.<Integer>selectCase().when(cb.lessThanOrEqualTo(root.<Integer>get("stock"), 0), 1).otherwise(0));
         return switch (sort) {
-            case PRICE_ASC -> List.of(cb.asc(root.get("price")), cb.asc(root.get("id")));
-            case PRICE_DESC -> List.of(cb.desc(root.get("price")), cb.asc(root.get("id")));
-            case POPULAR -> List.of(cb.desc(root.get("soldCount")), cb.asc(root.get("id")));
+            case PRICE_ASC -> List.of(soldOutLast, cb.asc(root.get("price")), cb.asc(root.get("id")));
+            case PRICE_DESC -> List.of(soldOutLast, cb.desc(root.get("price")), cb.asc(root.get("id")));
+            case POPULAR -> List.of(soldOutLast, cb.desc(root.get("soldCount")), cb.asc(root.get("id")));
         };
     }
 }

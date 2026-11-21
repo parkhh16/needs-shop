@@ -21,7 +21,9 @@ import java.util.UUID;
         // 내 주문 목록: WHERE user_id = ? ORDER BY id DESC 를 인덱스만으로 정렬까지 처리
         @Index(name = "idx_orders_user_id_id", columnList = "user_id, id"),
         // 만료 스케줄러: WHERE status = 'PENDING_PAYMENT' AND expires_at < ?
-        @Index(name = "idx_orders_status_expires_at", columnList = "status, expires_at")
+        @Index(name = "idx_orders_status_expires_at", columnList = "status, expires_at"),
+        // 인기 배지 집계: WHERE status = 'PAID' AND created_at >= ?
+        @Index(name = "idx_orders_status_created_at", columnList = "status, created_at")
 })
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Order extends BaseTimeEntity {

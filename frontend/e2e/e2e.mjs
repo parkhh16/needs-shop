@@ -212,6 +212,48 @@ if (!target) throw new Error('주문 가능한 상품이 없다')
   await ctx.close()
 }
 
+// 3-e) 후기(샘플 데이터): 카드 평점, 상세 후기 섹션/분포, 페이지 번호, 후기 API 실패 격리. 값은 백엔드 데이터에 의존하므로 구조만 본다
+{
+  const ctx = await browser.newContext({ viewport: VIEWPORTS.pc })
+  const page = await ctx.newPage()
+  await page.goto(`${BASE}/`); await settle(page)
+  check('후기: 상품 카드에 평점 줄 표시', (await page.locator('.card .card-rating').count()) > 0)
+  const rated = page.locator('.card .card-rating[aria-label]').first()
+  check('후기: 평점 줄에 낭독용 라벨 ("평점 5점 만점에 …, 후기 …개")', (await rated.count()) === 0 || /^평점 5점 만점에 [\d.]+, 후기 \d+개$/.test(await rated.getAttribute('aria-label')))
+
+  const withReviews = list.find(p => p.reviewCount > 0)
+  if (withReviews) {
+    await page.goto(`${BASE}/products/${withReviews.id}`); await settle(page)
+    const sec = page.locator('section[aria-labelledby="reviews-title"]')
+    check('후기: 상세에 후기 섹션', await sec.isVisible())
+    check('후기: 점수 분포 5줄 (5점부터)', (await sec.locator('.rv-dist li').count()) === 5 && /^5점/.test(await sec.locator('.rv-dist li').first().innerText()))
+    check('후기: 후기 목록 표시', (await sec.locator('.rv-item').count()) > 0)
+    check('후기: 샘플 데이터 안내 문구', await sec.getByText('이 후기는 데모용 샘플 데이터예요.').isVisible())
+    check('후기: 구매 버튼은 여전히 하나', (await page.locator('.buy-bar button.buy').count()) === 1)
+  }
+
+  const many = list.find(p => p.reviewCount > 10)
+  if (many) {
+    await page.goto(`${BASE}/products/${many.id}`); await settle(page)
+    const firstText = () => page.locator('.rv-item').first().innerText()
+    const before = await firstText()
+    check('후기: 페이지 번호 줄이 있고 1페이지가 현재', (await page.locator('nav.rv-pages [aria-current="page"]').innerText()) === '1')
+    check('후기: 첫 페이지에서는 이전 버튼이 꺼져 있음', await page.getByRole('button', { name: '이전 페이지' }).isDisabled())
+    await page.getByRole('button', { name: '2페이지' }).click()
+    await page.waitForFunction(() => document.querySelector('nav.rv-pages [aria-current="page"]')?.textContent === '2', null, { timeout: 5000 }).catch(() => {})
+    check('후기: 2페이지로 바뀌고 목록이 교체됨(이어 붙지 않음)', (await page.locator('nav.rv-pages [aria-current="page"]').innerText()) === '2' && (await firstText()) !== before && (await page.locator('.rv-item').count()) <= 10, `${await page.locator('.rv-item').count()}개`)
+  }
+
+  // 후기 목록 API가 500이어도 상품 정보와 구매 버튼은 정상 (부가 기능 실패 격리)
+  if (withReviews) {
+    await page.route(url => /^\/api\/products\/\d+\/reviews$/.test(url.pathname), r => r.fulfill({ status: 500, contentType: 'application/json', body: '{}' }))
+    await page.goto(`${BASE}/products/${withReviews.id}`); await settle(page)
+    check('후기 500: 안내 문구가 보임', await page.getByText('후기를 불러오지 못했어요').isVisible())
+    check('후기 500: 구매 영역은 정상', (await page.locator('.buy-bar button.buy').count()) === 1 && await page.locator('.buy-box h1').isVisible())
+  }
+  await ctx.close()
+}
+
 // 4) 화면별:콘솔 에러, 가로 스크롤, axe (모바일/PC x 라이트/다크)
 for (const [vpName, viewport] of Object.entries(VIEWPORTS)) {
   for (const scheme of SCHEMES) {

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { LOGO_INNER } from '../logo'
+import { LOGO_INNER, LOGO_STROKE } from '../logo'
 
 /** 인라인 SVG 아이콘. 24x24 viewBox, currentColor 선, 굵기 1.75, 장식용이라 aria-hidden */
 function Icon({ children, className }: { children: ReactNode; className?: string }) {
@@ -64,7 +64,7 @@ export function CategoryIcon({ code, className }: { code: string | null | undefi
 export function LogoMark() {
   return (
     <span className="logo-mark">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={LOGO_STROKE} strokeLinecap="round" strokeLinejoin="round"
            aria-hidden="true" focusable="false" dangerouslySetInnerHTML={{ __html: LOGO_INNER }} />
     </span>
   )
@@ -85,4 +85,21 @@ export const PlayIcon = ({ className }: { className?: string }) => (
 
 export const ChevronDownIcon = ({ className }: { className?: string }) => (
   <Icon className={className}><path d="m6 9 6 6 6-6" /></Icon>
+)
+
+/** 채워진 별(평점 표시용). 색은 currentColor, 장식이라 aria-hidden */
+export const StarIcon = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false">
+    <path d="M12 2.8l2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L12 17.6l-5.8 3.1 1.1-6.5L2.6 9.6l6.5-.9L12 2.8Z" />
+  </svg>
+)
+/** 작은 불꽃(핫딜 배지용) */
+export const FlameIcon = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false">
+    <path d="M12.5 2c.4 3-1.2 4.6-2.6 6.2C8.5 9.8 7 11.4 7 14a5 5 0 0 0 10 0c0-1.6-.7-2.9-1.5-3.9-.3 1-.9 1.6-1.6 1.9.5-3.4-.2-6.8-1.4-10Z" />
+  </svg>
+)
+/** 인기(오르는 선) */
+export const TrendIcon = ({ className }: { className?: string }) => (
+  <Icon className={className}><path d="m3 17 6-6 4 4 8-8M15 7h6v6" /></Icon>
 )
