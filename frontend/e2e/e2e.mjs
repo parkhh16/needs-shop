@@ -212,7 +212,7 @@ if (!target) throw new Error('주문 가능한 상품이 없다')
   await ctx.close()
 }
 
-// 3-e) 후기(샘플 데이터): 카드 평점, 상세 후기 섹션/분포, 더보기, 후기 API 실패 격리. 값은 백엔드 데이터에 의존하므로 구조만 본다
+// 3-e) 후기(샘플 데이터): 카드 평점, 상세 후기 섹션/분포, 페이지 번호, 후기 API 실패 격리. 값은 백엔드 데이터에 의존하므로 구조만 본다
 {
   const ctx = await browser.newContext({ viewport: VIEWPORTS.pc })
   const page = await ctx.newPage()
@@ -235,10 +235,13 @@ if (!target) throw new Error('주문 가능한 상품이 없다')
   const many = list.find(p => p.reviewCount > 10)
   if (many) {
     await page.goto(`${BASE}/products/${many.id}`); await settle(page)
-    const before = await page.locator('.rv-item').count()
-    await page.getByRole('button', { name: '후기 더보기' }).click()
-    await page.waitForFunction(n => document.querySelectorAll('.rv-item').length > n, before, { timeout: 5000 }).catch(() => {})
-    check('후기: 더보기를 누르면 목록이 늘어남', (await page.locator('.rv-item').count()) > before, `${before} → ${await page.locator('.rv-item').count()}`)
+    const firstText = () => page.locator('.rv-item').first().innerText()
+    const before = await firstText()
+    check('후기: 페이지 번호 줄이 있고 1페이지가 현재', (await page.locator('nav.rv-pages [aria-current="page"]').innerText()) === '1')
+    check('후기: 첫 페이지에서는 이전 버튼이 꺼져 있음', await page.getByRole('button', { name: '이전 페이지' }).isDisabled())
+    await page.getByRole('button', { name: '2페이지' }).click()
+    await page.waitForFunction(() => document.querySelector('nav.rv-pages [aria-current="page"]')?.textContent === '2', null, { timeout: 5000 }).catch(() => {})
+    check('후기: 2페이지로 바뀌고 목록이 교체됨(이어 붙지 않음)', (await page.locator('nav.rv-pages [aria-current="page"]').innerText()) === '2' && (await firstText()) !== before && (await page.locator('.rv-item').count()) <= 10, `${await page.locator('.rv-item').count()}개`)
   }
 
   // 후기 목록 API가 500이어도 상품 정보와 구매 버튼은 정상 (부가 기능 실패 격리)

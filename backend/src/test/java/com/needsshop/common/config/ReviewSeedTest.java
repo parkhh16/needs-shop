@@ -103,7 +103,7 @@ class ReviewSeedTest {
     }
 
     @Test
-    @DisplayName("상품별 평균: 대부분 4.0~4.7, 4.8 이상은 소수, 5.0은 후기 3~5개인 상품만, 후기 없는 상품 3~4개, 후기 수는 0 또는 3~60")
+    @DisplayName("상품별 평균: 모두 4.1 이상(화면에 노출되는 점수라 4점대 초반 아래는 두지 않는다), 대부분 4.1~4.7, 4.8 이상은 소수, 5.0은 후기 3~5개인 상품만, 후기 없는 상품 3~4개, 후기 수는 0 또는 3~60")
     void perProductAverages() {
         List<Product> all = seeded();
         List<Product> reviewed = all.stream().filter(p -> p.getReviewCount() > 0).toList();
@@ -112,11 +112,11 @@ class ReviewSeedTest {
         assertThat(none.size()).as("후기 없는 상품").isBetween(3, 4);
         assertThat(reviewed).allSatisfy(p -> assertThat(p.getReviewCount()).as(p.getName()).isBetween(3, 60));
 
-        long usual = reviewed.stream().filter(p -> p.ratingAvg() >= 4.0 && p.ratingAvg() <= 4.7).count();
-        assertThat(usual).as("4.0~4.7 상품").isGreaterThanOrEqualTo((long) Math.ceil(reviewed.size() * 0.7));
+        long usual = reviewed.stream().filter(p -> p.ratingAvg() >= 4.1 && p.ratingAvg() <= 4.7).count();
+        assertThat(usual).as("4.1~4.7 상품").isGreaterThanOrEqualTo((long) Math.ceil(reviewed.size() * 0.7));
         List<Product> high = reviewed.stream().filter(p -> p.ratingAvg() >= 4.8).toList();
         assertThat(high.size()).as("4.8 이상 상품").isBetween(1, 4);
-        assertThat(reviewed.stream().filter(p -> p.ratingAvg() < 4.0).count()).as("3점대 후반 상품이 일부 있다").isBetween(1L, 4L);
+        assertThat(reviewed).as("화면에 노출되는 상품 평균은 4.1 이상").allSatisfy(p -> assertThat(p.ratingAvg()).as(p.getName()).isGreaterThanOrEqualTo(4.1));
         reviewed.stream().filter(p -> p.ratingAvg() == 5.0)
                 .forEach(p -> assertThat(p.getReviewCount()).as(p.getName() + "의 5.0은 후기가 적을 때만").isBetween(3, 5));
         assertThat(reviewed.stream().filter(p -> p.getReviewCount() >= 40).map(Product::getPrice).max(Long::compare).orElse(0L))
