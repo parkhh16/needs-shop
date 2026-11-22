@@ -7,6 +7,19 @@
 
 <br>
 
+> **30초 요약**
+>
+> **문제**: 한정 재고에 주문이 몰리면 재고가 덜 줄거나(초과 판매), 결제는 됐는데 주문은 모르거나, 따닥 클릭으로 주문이 두 번 생깁니다.
+>
+> **해결 핵심 3가지**
+> 1. **재고는 쿼리 하나로 증감**: `UPDATE ... SET stock = stock - ? WHERE stock >= ?`. 4가지 전략을 MySQL에서 같은 조건으로 측정해 채택했습니다.
+> 2. **중복과 격리는 DB가 보장**: 멱등 키와 유니크 제약, 주문 생성 트랜잭션만 `READ COMMITTED`.
+> 3. **외부 결제(PG)는 트랜잭션 밖에서**: 타임아웃은 실패가 아니라 `UNKNOWN`이고, 대사 배치가 PG 조회로 확정합니다.
+>
+> **대표 수치 (MySQL)**: 동시 주문 2,000건에서 락 없음은 재고가 **74개만 줄었고**, 원자적 UPDATE는 초과 판매 **0건**. 인기 상품 경합에서 낙관적 락 TPS 24~32 → 원자적 UPDATE **110~133**. 아래 [주요 결과](#주요-결과)에 전체 표가 있습니다.
+
+<br>
+
 ## 프로젝트 목표
 
 - 동시 주문이 몰려도 **초과 판매 0건**. 재고 차감 방법 4가지를 모두 구현하고 **MySQL에서 같은 조건으로 측정**해서 고릅니다.
@@ -21,15 +34,15 @@
 
 | 분류 | 기술 | 선택 이유 |
 |---|---|---|
-| Backend | Java 21, Spring Boot 3.5, Spring Data JPA | |
-| Auth | Spring Security + JWT | 세션 저장소 없이 서버를 늘릴 수 있게. JWT의 약점인 즉시 무효화는 `token_version`으로 보완 ([#13](docs/issues/09-auth.md)) |
+| Backend | Java 21, Spring Boot 3.5, Spring Data JPA | 이 프로젝트의 핵심인 동시성 제어를 한 스택에서 비교하려고: 낙관적 락(`@Version`), `@Modifying` 원자적 UPDATE, `@DynamicUpdate`, 트랜잭션 격리 수준 지정을 모두 JPA/Spring 트랜잭션으로 구현 ([이슈 01](docs/issues/01-stock-concurrency.md)) |
+| Auth | Spring Security + JWT | 세션 저장소 없이 서버를 늘릴 수 있게. JWT의 약점인 즉시 무효화는 `token_version`으로 보완 ([이슈 09](docs/issues/09-auth.md)) |
 | Database | **MySQL 8 (InnoDB)**, H2 | 락과 격리 수준은 DB마다 다르게 동작해서, 운영과 같은 MySQL에서 측정·테스트. H2는 설치 없는 로컬 실행용 |
 | Migration | Flyway + `ddl-auto: validate` | 스키마 변경 이력을 코드로 관리하고, 엔티티와 스키마 불일치를 서버 기동 시점에 발견 |
 | Cache | Caffeine | 탈퇴·정지 즉시 반영을 위한 사용자 상태 조회를 요청마다 DB 없이 처리. 서버가 여러 대여도 캐시는 서버 메모리에 두고 무효화만 전파 |
-| Redis | Pub/Sub, `INCR` 카운터 | 서버 여러 대일 때만: 사용자 캐시 무효화를 모든 서버에 전파, 요청 한도를 한 곳에서 셈. 장애 시 요청은 허용하고 캐시는 TTL로 따라옴 ([#17](docs/issues/13-scale-out.md)) |
+| Redis | Pub/Sub, `INCR` 카운터 | 서버 여러 대일 때만: 사용자 캐시 무효화를 모든 서버에 전파, 요청 한도를 한 곳에서 셈. 장애 시 요청은 허용하고 캐시는 TTL로 따라옴 ([이슈 13](docs/issues/13-scale-out.md)) |
 | Scheduler | ShedLock (JDBC) | 만료·대사 스케줄러를 한 서버에서만 실행. 락을 이미 공유하는 DB에 둬서 결제 복구가 Redis에 의존하지 않음 |
 | AI | Gemini API (REST, 응답 JSON Schema 강제) | 손님이 기다리지 않는 곳에서만 호출: 상품 등록 후 검색 태그 만들기, 하루 한 번 못 찾은 검색어 정리. AI가 판단하고 사실(근거 없는 기능, 검색 횟수, 있는 상품인지)은 코드가 확인. 검색 자체는 규칙과 단어 매칭이라 키가 없어도 동작 |
-| Frontend | React 19, TypeScript, Vite, React Router | |
+| Frontend | React 19, TypeScript, Vite, React Router | 화면이 주문·결제 상태(결제 확인 중 등)를 정확히 보여주는 것이 목적이라 상태 타입을 `api.ts`에 두고 `tsc` 빌드로 어긋남을 잡음. 화면은 라우트 단위(`/`, `/products/:id`, `/me`, `/admin/*`)로 나눔. Playwright e2e와 axe 접근성 검사를 같은 스택에서 실행 |
 | Test / Tool | JUnit 5, Testcontainers, Node 부하 테스트 스크립트, Swagger, GitHub Actions | CI가 같은 테스트를 H2와 MySQL 8.0(Testcontainers) 양쪽에서 실행하고, 빌드와 서버 환경(서버 2대) 스모크 테스트까지 |
 | Infra | Docker Compose, Caddy | 서버 환경을 파일 하나로 재현. Caddy는 HTTPS 인증서 발급, 정적 파일, 프록시, 헬스체크 기반 라우팅을 설정 몇 줄로 처리 |
 | (쓰지 않음) | Redis 분산락 | 재고가 DB 한 행에 있어서 DB 락으로 원자성이 보장됨. 분산락은 DB 밖 자원을 조율할 때 쓰는 도구라고 판단 ([자세히](docs/issues/01-stock-concurrency.md#왜-redis-분산락을-쓰지-않았나)). Redis는 캐시 무효화 전파와 요청 한도 카운터에만 씀 |
@@ -57,24 +70,22 @@
 
 ## 기술적 이슈 해결 과정
 
-- [#1] [재고 100개에 1,000명이 몰릴 때: 재고 차감 전략 4가지를 MySQL에서 실측 비교](docs/issues/01-stock-concurrency.md)
-- [#2] [부하 테스트 결과가 뒤집힌 이유: 경합을 재지 못하던 측정 설계를 다시 짠 이야기](docs/issues/01-stock-concurrency.md#측정-설계를-다시-한-이야기)
-- [#3] [락을 걸었는데도 1인 구매 제한이 뚫린 이유: MySQL REPEATABLE READ의 스냅샷](docs/issues/02-purchase-limit.md)
-- [#4] [SELECT FOR UPDATE가 옛날 재고를 돌려준 이유: 영속성 컨텍스트와 DTO 프로젝션](docs/issues/02-purchase-limit.md)
-- [#5] [readOnly 트랜잭션 안의 INSERT가 MySQL에서만 거부된 이유](docs/issues/03-readonly-transaction.md)
-- [#6] [관리자가 상품명을 고쳤더니 재고가 되돌아간 이유: 변경 감지와 `@DynamicUpdate`](docs/issues/04-stock-lost-update.md)
-- [#7] [한정 100개 상품의 재고가 16,602개가 된 이유: 재고는 덮어쓰지 않고 증감한다](docs/issues/04-stock-lost-update.md)
-- [#8] [따닥 클릭과 재전송으로 주문이 두 번 생기는 문제: Idempotency-Key와 유니크 제약](docs/issues/05-idempotency.md)
-- [#9] [PG는 승인했는데 우리 DB는 모를 때: 트랜잭션 분리, UNKNOWN 상태, 대사 배치](docs/issues/06-payment-failure.md)
-- [#10] [거절된 결제를 승인으로 오판할 뻔한 버그: HTTP 200과 결제 상태](docs/issues/06-payment-failure.md)
-- [#11] [재고는 언제 빼야 하나: 주문 시점 선점 + TTL](docs/issues/07-stock-reservation.md)
-- [#12] [주문 목록 조회: N+1은 22 → 3 쿼리, 인덱스로 읽는 행은 994 → 10](docs/issues/08-query-performance.md)
-- [#13] [탈퇴·정지한 회원의 JWT가 계속 살아 있는 문제: token_version과 캐시](docs/issues/09-auth.md)
-- [#14] [로그 저장 때문에 주문이 느려지면 안 된다: 활동 로그 비동기 배치 적재](docs/issues/10-activity-log.md)
-- [#15] [자연어 검색: 검색마다 부르던 LLM을 빼고, AI는 상품 태그와 등록 추천으로](docs/issues/11-ai-search.md)
-- [#16] [데모 기본값으로 "잘 뜨는" 운영 서버를 막기: 설정 안전장치와 서버 환경 분리](docs/issues/12-production-guard.md)
-- [#17] [서버를 두 대로 늘리면 깨지는 것들: 스케줄러 중복, 캐시 무효화, 요청 한도](docs/issues/13-scale-out.md)
-- [#18] [후기·인기·핫딜 표시: 돈과 재고를 건드리지 않고 표시만 더하기](docs/issues/14-reviews-and-badges.md)
+번호는 `docs/issues/` 파일 번호와 같습니다.
+
+- [이슈 01] [재고 100개에 1,000명이 몰릴 때: 재고 차감 전략 4가지를 MySQL에서 실측 비교](docs/issues/01-stock-concurrency.md) · [부하 테스트 결과가 뒤집힌 이유: 측정 설계를 다시 짠 이야기](docs/issues/01-stock-concurrency.md#측정-설계를-다시-한-이야기)
+- [이슈 02] [락을 걸었는데도 1인 구매 제한이 뚫린 이유: MySQL REPEATABLE READ의 스냅샷, SELECT FOR UPDATE가 옛날 재고를 돌려준 이유](docs/issues/02-purchase-limit.md)
+- [이슈 03] [readOnly 트랜잭션 안의 INSERT가 MySQL에서만 거부된 이유](docs/issues/03-readonly-transaction.md)
+- [이슈 04] [관리자가 상품명을 고쳤더니 재고가 되돌아간 이유(`@DynamicUpdate`), 한정 100개 상품의 재고가 16,602개가 된 이유(재고는 덮어쓰지 않고 증감)](docs/issues/04-stock-lost-update.md)
+- [이슈 05] [따닥 클릭과 재전송으로 주문이 두 번 생기는 문제: Idempotency-Key와 유니크 제약](docs/issues/05-idempotency.md)
+- [이슈 06] [PG는 승인했는데 우리 DB는 모를 때(UNKNOWN, 대사 배치), 거절된 결제를 승인으로 오판할 뻔한 버그](docs/issues/06-payment-failure.md)
+- [이슈 07] [재고는 언제 빼야 하나: 주문 시점 선점 + TTL](docs/issues/07-stock-reservation.md)
+- [이슈 08] [주문 목록 조회: N+1은 22 → 3 쿼리, 인덱스로 읽는 행은 994 → 10](docs/issues/08-query-performance.md)
+- [이슈 09] [탈퇴·정지한 회원의 JWT가 계속 살아 있는 문제: token_version과 캐시](docs/issues/09-auth.md)
+- [이슈 10] [로그 저장 때문에 주문이 느려지면 안 된다: 활동 로그 비동기 배치 적재](docs/issues/10-activity-log.md)
+- [이슈 11] [자연어 검색: 검색마다 부르던 LLM을 빼고, AI는 상품 태그와 등록 추천으로](docs/issues/11-ai-search.md)
+- [이슈 12] [데모 기본값으로 "잘 뜨는" 운영 서버를 막기: 설정 안전장치와 서버 환경 분리](docs/issues/12-production-guard.md)
+- [이슈 13] [서버를 두 대로 늘리면 깨지는 것들: 스케줄러 중복, 캐시 무효화, 요청 한도](docs/issues/13-scale-out.md)
+- [이슈 14] [후기·인기·핫딜 표시: 돈과 재고를 건드리지 않고 표시만 더하기](docs/issues/14-reviews-and-badges.md)
 
 <br>
 
@@ -88,7 +99,7 @@
 - **돈과 재고가 걸린 순서를 지킴**: 결제 결과를 모르는 주문은 만료·취소 대상에서 제외, 환불은 PG 환불이 성공한 뒤에만 우리 쪽 상태 변경
 - **재고는 덮어쓰지 않고 증감으로**: 관리자 조정과 재고 복구는 `stock = stock + :delta`. 가용 재고와 결제 대기 수량을 따로 표시
 - **서버를 늘려도 깨지지 않게**: 정합성은 DB가 지키고, 서버 메모리에 기댄 것만 손봄. 스케줄러는 DB 락으로 한 서버에서만, 사용자 캐시는 커밋 후 삭제하고 다른 서버에 전파, 요청 한도는 공유 카운터
-- **테스트는 운영과 같은 DB에서도**: 같은 테스트 135개를 CI에서 MySQL 8.0으로도 실행 (Testcontainers가 Docker로 띄움, 로컬은 `-Pdb=mysql`)
+- **테스트는 운영과 같은 DB에서도**: 같은 테스트를 CI에서 MySQL 8.0으로도 실행 (Testcontainers가 Docker로 띄움, 로컬은 `-Pdb=mysql`)
 - **안전하지 않으면 운영 서버가 뜨지 않게**: 데모 JWT 키, `admin/admin`, 데모 회원, H2, 개발 도구 중 하나라도 남아 있으면 `prod` 프로필 기동을 중단 (fail fast)
 - **부가 기능이 핵심 흐름을 막지 않게**: 활동 로그는 비동기 배치 적재(실패 시 버림), AI는 검색·상품 저장 요청 밖의 백그라운드 작업에서만 호출하고 실패하면 다음 주기에 다시
 - **요청 하나를 끝까지 추적**: traceId를 서버 로그, 에러 응답, 응답 헤더, 활동 로그에 연결
@@ -106,7 +117,7 @@
 | OPTIMISTIC | version 비교 + 트랜잭션 밖 재시도 | **24 / 32** | **14.0 / 6.2초** | **35%가 재고가 남았는데 실패** |
 | **ATOMIC_UPDATE** (채택) | `UPDATE ... WHERE stock >= ?` | **110 / 133** | **2.4 / 1.9초** | 정확 |
 
-로컬 노트북, 서버 1대 기준이라 절대 수치보다 같은 조건에서의 상대 비교로 봐야 합니다. H2 결과, JUnit 동시성 테스트 결과, 해석은 [#1 문서](docs/issues/01-stock-concurrency.md)에 있습니다.
+로컬 노트북, 서버 1대 기준이라 절대 수치보다 같은 조건에서의 상대 비교로 봐야 합니다. H2 결과, JUnit 동시성 테스트 결과, 해석은 [이슈 01 문서](docs/issues/01-stock-concurrency.md)에 있습니다.
 
 <br>
 
@@ -356,7 +367,7 @@ backend/src/main/java/com/needsshop
 └── common/        에러 코드, 전역 예외 처리, traceId 필터, 데모 데이터, 운영 설정 안전장치(ProductionGuard)
     ├── cluster/   서버 여러 대: 스케줄러 락(ShedLock), Redis 켜짐/꺼짐에 따른 무효화 전파·카운터 구성
     └── ratelimit/ 요청 한도 필터, 메모리·Redis 카운터
-backend/src/main/resources/db/migration   Flyway 마이그레이션 (V1~V9, V7은 기존 상품을 채우는 Java 마이그레이션이라 src/main/java/db/migration)
+backend/src/main/resources/db/migration   Flyway 마이그레이션 (V1~V11, V7은 기존 상품을 채우는 Java 마이그레이션이라 src/main/java/db/migration)
 frontend/src
 ├── pages/         쇼핑, 상세, 내 활동, auth/(로그인·가입·계정), admin/(대시보드·로그·회원·상품·주문·등록 추천)
 └── components/    헤더, 카테고리 사이드바, 상품 카드, 이미지
@@ -376,9 +387,9 @@ scripts/           상품 이미지 수집
 ## 한계와 다음 단계
 
 - **후기, 인기·핫딜 배지의 판매 데이터는 데모용 샘플입니다.** 실제 구매자가 없어 후기 608개는 코드로 만든 데이터이고(작성 기능 없음), 인기 배지는 시드로 만든 데모 주문으로 켜집니다. 할인가의 "원래 가격"도 시드 값입니다. 실서비스라면 실제 판매 이력과 구매 인증된 후기만 써야 합니다.
-- **앱 서버는 여러 대, DB는 한 대입니다.** 앱 서버를 늘리는 데 필요한 것(스케줄러 락, 캐시 무효화 전파, 공유 요청 한도)은 갖췄고 서버 환경은 두 대로 뜹니다 ([#17](docs/issues/13-scale-out.md)). DB 이중화(복제, 장애 조치)와 Redis 이중화는 하지 않았습니다. Redis가 죽으면 요청 한도는 허용으로, 캐시 무효화는 TTL(30초)로 물러납니다.
+- **앱 서버는 여러 대, DB는 한 대입니다.** 앱 서버를 늘리는 데 필요한 것(스케줄러 락, 캐시 무효화 전파, 공유 요청 한도)은 갖췄고 서버 환경은 두 대로 뜹니다 ([이슈 13](docs/issues/13-scale-out.md)). DB 이중화(복제, 장애 조치)와 Redis 이중화는 하지 않았습니다. Redis가 죽으면 요청 한도는 허용으로, 캐시 무효화는 TTL(30초)로 물러납니다.
 - **결제 결과 반영은 동기 방식입니다.** 트래픽이 커지면 Outbox 패턴과 메시지 큐로 분리하는 것이 다음 단계입니다.
 - **DB가 한계에 도달하면** 락을 더하는 대신 Redis `DECR`로 재고 게이트를 앞단에 두고 DB에는 비동기로 반영하는 구조를 검토합니다.
 - 멱등 레코드가 처리 중(IN_PROGRESS) 상태로 서버가 죽으면 그 키는 409로 남습니다. 오래된 레코드를 정리하는 배치가 필요합니다.
 - **상시 운영하는 서버는 없습니다.** 운영 프로필, Docker 이미지, HTTPS 프록시, 배포 워크플로는 갖췄고 CI가 push마다 서버 2대 구성을 실제로 띄워 확인합니다. 다만 사용자가 없는 데모를 서버 비용을 내며 계속 띄워 두는 것은 얻는 것에 비해 비용이 커서 하지 않았습니다. 화면은 로컬에서 바로 띄울 수 있습니다 (아래 실행 방법).
-- 검색 품질은 질의 72개 평가셋으로 잽니다 (◎ 정확 28 → 66). 이 질의들은 규칙을 다듬으면서 본 것이라, 만든 사람이 보지 않은 질의로 다시 재는 것이 다음 단계입니다. 등록 추천의 검색 기록은 시연용으로 만든 데이터입니다 ([#15](docs/issues/11-ai-search.md)).
+- 검색 품질은 질의 72개 평가셋으로 잽니다 (◎ 정확 28 → 66). 이 질의들은 규칙을 다듬으면서 본 것이라, 만든 사람이 보지 않은 질의로 다시 재는 것이 다음 단계입니다. 등록 추천의 검색 기록은 시연용으로 만든 데이터입니다 ([이슈 11](docs/issues/11-ai-search.md)).
