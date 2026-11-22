@@ -44,3 +44,36 @@
 - docs/design/shots/BEFORE_AFTER.md에 기준선→최종 표, 회차별(02,03,05,06,07) 전/후 경로 표, 보이는 변화가 없는 회차(04, 08+09, axe)를 정리. 표의 모든 경로가 실제 파일을 가리키는 것을 확인.
 - README '화면 구성' 위에 final 이미지 4장을 상대 경로로 삽입하고 BEFORE_AFTER.md 링크 추가.
 - 남은 문제: 03(구매 제한 중복 제거)은 높이가 같아 이미지로 구분이 어렵다. 홈 모바일 다크는 높이 변화가 없다. 11 최종 리뷰, 12 블로그 글감이 남음.
+## N7 (11 최종 점검) — 전체 요약
+### 회차 표
+| 회차 | 한 일 | 결과 |
+|---|---|---|
+| 01 | 점검 | build/lint OK, e2e 216/4 → states 후 218/2 |
+| 02 | 홈 레일 한 줄 가로 스크롤 | 홈 PC 높이 4143→3764(원 측정), 이후 비교 2589→2352(줄인 이미지) |
+| 03 | 상세 구매 제한 중복 표기 제거 | 화면에서만 제거 |
+| N1 | 02·03 회수 반영 + 전후 스크린샷 | r3-before/after |
+| N2 | 04 면접관 리뷰, 05 대표 카드·후기 없음 | 지적 3건(중2, 하1), 대표 카드 contain |
+| N3 | 06 주문·결제 화면 문구 | PAYING 안내 명확화, 더블클릭 1회 PASS |
+| N4 | 07 접근성·모바일 수량 행·포커스링 | e2e 218/2 → 220/0 |
+| N5 | 08+09 README | 30초 요약, 선택 이유, 이슈 번호 통일 |
+| N6 | 10 최종 스크린샷 | final/, BEFORE_AFTER.md |
+| N7 | 11 최종 점검, 꼬리질문 | docs/interview-questions.md |
+### 최종 수치 (이번 회차에 실제 실행)
+- `npm run build` 통과, `npm run lint` 경고 24개(기준 24 이하), `npm run e2e`(states 후) 통과 220 / 실패 0(직전 기준 218/2보다 나아짐).
+- 구매 버튼: 모바일 상세 DOM 1개 PASS, 후기 섹션에서도 하나 PASS. `inFlight` ref 가드(ProductDetailPage.tsx 20·70·71·85행) 유지, 소스의 `className="buy"` 2개는 로그인 여부에 따라 하나만 렌더되는 분기. PAYING: 보라 점선 박스, '결제 확인 중', 취소·재결제 버튼 없음(MyActivityPage.tsx).
+- main 대비 변경: backend, api.ts, Flyway, deploy, .github 변경 없음. frontend는 index.css, admin.css, MyActivityPage.tsx, ProductDetailPage.tsx, AdminActivityPage.tsx 5개(20줄 추가, 13줄 삭제). frontend/docs/harness 밖에서는 README.md만 변경(문서).
+### 못 한 것
+- 12 블로그 글감 초안, 05b 모바일 홈 간격, 후기 섹션 접근성 확인.
+- 04 지적 2건(결제 버튼 useRef 가드, 멱등 키 재사용)은 로직 변경 금지라 미수정.
+- 높이 640 이하 모바일에서 첫 화면의 수량 행은 여전히 구매 바 아래.
+- docs/guide.md의 'V1~V9', '전체 135개'가 틀린 채 남음. docs/issues/ 안에 옛 번호 참조 `[#13]`, `[#14]` 등이 남음(README는 파일 번호로 통일됨).
+- 실제 테스트 실행 건수와 백엔드 테스트(`./gradlew test`)는 이번 릴레이에서 실행하지 않음.
+### 사람이 할 일
+- 브랜치 relay/needs-shop 검토 후 PR 생성(릴레이 중에는 만들지 않음).
+- 면접 꼬리질문 문서(근거 없음으로 표시한 곳)를 직접 보강, 04 지적 2건의 수정 여부 결정.
+- README의 이미지와 docs/guide.md, docs/issues의 옛 번호 정리.
+### 교훈 후보 (LESSONS.md는 고치지 않음)
+- 스크린샷은 800px 이하로 줄이고 대표 장만 보면 읽기 비용이 작다.
+- 미커밋 변경 없이 회차마다 커밋·push하면 Stop 훅 재호출을 막는다.
+- 기능 변경 없는 문구 수정도 e2e와 더블클릭 가드 확인을 같이 돌리면 회귀를 빨리 잡는다.
+- 번호처럼 여러 문서가 서로 참조하는 값은 한 번에 정리하지 않으면 어긋남이 남는다(README만 고치고 docs/issues를 못 고침).

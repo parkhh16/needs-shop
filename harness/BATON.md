@@ -6,7 +6,7 @@
 - [x] 07 (남은 것: 후기 섹션 확인) 접근성(scrollable-region-focusable 포함), 모바일 상세 수량 행이 구매 바에 가림, 로그인 입력 포커스링 이중 테두리, 후기 섹션 확인
 - [x] 08+09 README(선택 이유, 이슈 번호, 링크, 30초 요약)
 - [x] 10 스크린샷 재생성(전후)
-- [ ] 11 최종 리뷰
+- [x] 11 최종 리뷰
 - [ ] 12 블로그 글감 초안
 
 ## 04 면접관 지적 [심각도/파일:줄/증상/제안]
@@ -16,3 +16,6 @@
 - [OK/MyActivityPage.tsx:113-118/PAYING은 '결제 확인 중' 안내만 있고 취소·재결제 버튼 없음. 확정처럼 보이지 않음]
 - 범위 이탈: 4d472ec 이후 frontend 변경은 index.css, ProductDetailPage.tsx뿐. backend/api.ts/deploy 변경 없음.
 - docs/interview.md는 저장소에 없음(꼬리질문 참고 불가). 필요하면 anthropic-skills:interviewer로 생성.
+
+## 릴레이 종료
+- 07~11 완료. 남은 항목은 12 블로그 글감 초안뿐이며 이번 릴레이 범위 밖으로 두고 종료. 사람이 할 일은 LEDGER 맨 아래 '전체 요약' 참고.
