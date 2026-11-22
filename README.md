@@ -262,6 +262,16 @@ erDiagram
 
 ## 화면 구성
 
+| 홈 (PC 라이트) | 홈 (모바일 다크) |
+|:-:|:-:|
+| <img src="docs/design/shots/final/shop.pc.light.png" alt="홈 PC 라이트" width="420"> | <img src="docs/design/shots/final/shop.mobile.dark.png" alt="홈 모바일 다크" width="200"> |
+
+| 상품 상세 (PC 라이트) | 상품 상세 (모바일 다크) |
+|:-:|:-:|
+| <img src="docs/design/shots/final/product.pc.light.png" alt="상세 PC 라이트" width="420"> | <img src="docs/design/shots/final/product.mobile.dark.png" alt="상세 모바일 다크" width="200"> |
+
+전/후 비교는 [BEFORE_AFTER.md](docs/design/shots/BEFORE_AFTER.md)에 있습니다.
+
 | 화면 | 경로 | 주요 기능 |
 |---|---|---|
 | 쇼핑몰 | `/` | 카테고리 사이드바(대분류 › 소분류), 정렬·가격대·품절 필터(URL과 동기화), 자연어 검색(띄어쓰기·조사·만원대·제외어, AI 태그)과 조건 칩, 오타 교정, 일부만 맞을 때 안내 |
