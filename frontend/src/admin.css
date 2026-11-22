@@ -164,7 +164,8 @@ a.chip:hover { border-color: var(--accent); }
 .auth-card label .muted, .field-error, .field-ok { font-weight: var(--fw-regular); }
 .auth-card label .muted { font-size: var(--fs-sm); }
 .auth-card input { min-height: 48px; padding: 10px var(--space-3); font-size: var(--fs-base); border-radius: var(--radius); border: 1px solid var(--border-strong); }
-.auth-card input:focus-visible { outline-offset: 0; }
+/* 테두리 1px + 바깥 링 2px이 겹쳐 이중 테두리로 보였다. 링을 테두리 위에 겹치고 테두리 색도 같이 바꾼다 */
+.auth-card input:focus-visible { outline-offset: -1px; border-color: var(--focus); }
 .auth-card input[aria-invalid="true"] { border-color: var(--bad); }
 .auth-submit { min-height: 52px; padding: 12px; font-size: var(--fs-base); border-radius: var(--radius); margin-top: var(--space-1); }
 .auth-alt { margin: 0; text-align: center; font-size: 14px; color: var(--muted); }

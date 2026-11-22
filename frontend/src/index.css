@@ -514,6 +514,9 @@ th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--bord
   .detail { grid-template-columns: 1fr; gap: var(--space-4); }
   .gallery { margin: calc(-1 * var(--space-4)) calc(-1 * var(--space-4)) 0; gap: var(--space-2); }
   .gallery > .product-image { border-radius: 0; }
+  /* 정사각 사진이 첫 화면의 절반을 차지해 수량 행이 고정 구매 바 뒤로 밀렸다. 4:3으로 낮추고 사진 전체가 보이게 contain */
+  .gallery > .product-image { aspect-ratio: 4 / 3; }
+  .gallery > .product-image img { object-fit: contain; }
   .thumbs { flex-wrap: nowrap; overflow-x: auto; padding: 0 var(--space-4); scrollbar-width: none; }
   .thumbs button { width: 56px; }
   .buy-box { position: static; background: none; border: none; border-radius: 0; padding: 0; }

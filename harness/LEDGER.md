@@ -23,3 +23,9 @@
 - 전후: docs/design/shots/relay-n3/{before,after}/me-orders.* (PC 라이트, 모바일 다크). 주문은 page.route로 5개 상태를 모의한 화면이다(서버에 실제 PAYING 주문을 만들지 않음).
 - 미착수: 입력 검증 메시지(로그인·가입), 재고 부족 표시는 서버 메시지를 그대로 보여주는 구조라 프론트 문구 변경 없음. 필요하면 07 이후에 확인.
 - 남은 문제: 04에서 지적한 결제 버튼 useRef 가드, 멱등 키 재사용은 이번 지시(로직 금지)에 따라 미수정.
+## N4 (07 접근성)
+- axe scrollable-region-focusable: 원인은 AdminActivityPage의 `.table-wrap`(가로 스크롤, 포커스 불가). tabIndex=0, role=region, aria-label 추가로 해결.
+- 모바일 상세: 정사각 사진 때문에 390x844 첫 화면에서 수량 행이 y 813~863으로 고정 구매 바(상단 772) 뒤에 있었음. 모바일 갤러리를 4:3 + contain으로 낮춰 716~766으로 올라와 바 위에 보임. 스크롤 하단 여백(detail-page padding)은 원래 충분했음.
+- 로그인 포커스링: 테두리 1px과 바깥 링 2px(offset 0)이 겹쳐 이중 테두리. outline-offset -1px + border-color 동일로 단일 링.
+- 확인: build 통과, lint 경고 24, e2e 통과 220 / 실패 0(직전 218/2에서 개선). 전후: docs/design/shots/relay-n4/{before,after}(detail-qty, login-focus, 모바일 라이트·다크).
+- 남은 문제: 높이 640 이하 화면에서는 첫 화면에 수량 행이 여전히 바 아래(스크롤하면 보임). 후기 섹션 접근성은 미확인. 모바일 상세 사진이 contain이라 사진 좌우에 베이지 여백이 생김.
