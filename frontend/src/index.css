@@ -366,6 +366,8 @@ code { font-family: ui-monospace, 'Cascadia Code', Consolas, monospace; font-siz
 .order-note.info { background: var(--info-weak); }
 .order-note.unc { justify-content: flex-start; background: var(--unc-weak); border: 1px dashed var(--unc); color: var(--unc); }
 .order-note.unc p { color: var(--text); }
+.order-note.unc p strong { display: block; color: var(--unc); }
+.order-note.info .countdown { font-weight: var(--fw-bold); font-variant-numeric: tabular-nums; }
 .order-note.neutral { background: var(--neutral-weak); }
 .order-note.info p { color: var(--text); }
 .order-pay { flex: none; min-height: 40px; padding: 0 var(--space-5); border-radius: var(--radius); }
