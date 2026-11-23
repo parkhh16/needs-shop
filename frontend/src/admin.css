@@ -228,3 +228,18 @@ a.chip:hover { border-color: var(--accent); }
   .auth-page::before { height: 240px; }
 }
 .thumbs .ph-label, .thumb-cell .ph-label { display: none; }
+
+/* ── 도움말 "?" (components/HelpTip.tsx) ── */
+.help-tip { display: inline-flex; vertical-align: middle; margin-left: 6px; }
+.help-btn { position: relative; width: 20px; height: 20px; min-height: 0; padding: 0; border-radius: 50%; border: 1px solid var(--border-strong); background: var(--surface); color: var(--muted); font-size: 12px; font-weight: 700; line-height: 1; cursor: help; }
+.help-btn::after { content: ''; position: absolute; inset: -8px; } /* 터치로 누르기 쉽게 눌리는 영역만 넓힌다 */
+.help-btn:hover, .help-btn[aria-expanded="true"] { color: var(--accent); border-color: var(--accent); }
+.help-pop { position: fixed; z-index: 60; width: min(300px, calc(100vw - 16px)); padding: 10px 12px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--surface); color: var(--text); box-shadow: var(--shadow-2); font-size: 13px; font-weight: 400; line-height: 1.6; text-align: left; white-space: normal; word-break: keep-all; overflow-wrap: break-word; }
+.help-pop[hidden] { display: none; }
+
+/* 소개 한 줄과 메뉴·표 글자 크기 */
+.admin-intro h2 { display: flex; align-items: center; }
+.admin-intro p { font-size: 15px; line-height: 1.55; color: var(--text); opacity: .82; }
+.admin-tabs a { font-size: 15px; }
+.data-table { font-size: 14px; }
+.stock-cell input { width: 128px; } /* 표 글자를 키운 뒤에도 "+입고 / -출고" 안내문이 잘리지 않게 */

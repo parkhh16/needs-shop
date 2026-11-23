@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { adminApi, type ActivityLog, type ActivitySummary, type ActivityType } from '../../api'
 import { useApp } from '../../context/AppContext'
+import { HelpTip } from '../../components/HelpTip'
 import { ADMIN_SECTIONS } from './AdminLayout'
 import { describe, localIso, resultClass } from './activityFormat'
 
@@ -18,7 +19,7 @@ export function StatCards({ summary }: { summary: ActivitySummary | null }) {
       <div className="stat"><span>주문 성공</span><strong>{s ? s.orders.toLocaleString() : '–'}</strong></div>
       <div className={`stat ${s && s.serverErrors > 0 ? 'alert' : ''}`}>
         <span>서버 에러율 (5xx)</span><strong>{s ? `${(s.errorRate * 100).toFixed(1)}%` : '–'}</strong>
-        {s && <small>5xx {s.serverErrors}건 · 4xx {s.clientErrors}건{s.aiFailures > 0 && <> · <span title="Gemini 과부하 등 외부 AI가 응답하지 않은 요청. 우리 서버 장애가 아니라서 에러율에 넣지 않습니다">외부 AI 실패 {s.aiFailures}건 (제외)</span></>}</small>}
+        {s && <small>5xx {s.serverErrors}건 · 4xx {s.clientErrors}건{s.aiFailures > 0 && <> · <>외부 AI 실패 {s.aiFailures}건 (제외)<HelpTip label="외부 AI 실패">Gemini 과부하 등 외부 AI가 응답하지 않은 요청입니다. 우리 서버 장애가 아니라서 에러율에 넣지 않습니다.</HelpTip></></>}</small>}
       </div>
       <div className="stat"><span>평균 응답시간</span><strong>{s ? `${Math.round(s.avgLatencyMs)}ms` : '–'}</strong></div>
     </div>
@@ -80,7 +81,7 @@ export function AdminDashboard() {
           {ADMIN_SECTIONS.slice(1).map(s => (
             <Link key={s.to} to={s.to} className="guide-card">
               <strong>{s.title} →</strong>
-              <span>{s.desc}</span>
+              <span>{s.short}</span>
             </Link>
           ))}
         </div>

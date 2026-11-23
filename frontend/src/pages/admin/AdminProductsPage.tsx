@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { adminApi, api, type AdminProduct, type CategoryTree, type ProductForm } from '../../api'
 import { StatusBadge } from '../../components/ProductCard'
+import { HelpTip } from '../../components/HelpTip'
 import { ProductImage } from '../../components/ProductImage'
 import { useApp } from '../../context/AppContext'
 import { won } from '../../format'
@@ -64,7 +65,7 @@ function ProductEditor({ product, tree, onClose, onSaved }: {
           <label className="span2">한 줄 설명<input maxLength={500} value={form.description} onChange={e => set('description', e.target.value)} /></label>
           <label className="span2">상세 설명<textarea rows={3} maxLength={2000} value={form.detail} onChange={e => set('detail', e.target.value)} /></label>
         </div>
-        {product && <p className="muted">재고는 목록의 "재고" 칸에서 따로 조정합니다. 수정 중에 들어온 주문의 재고 차감을 덮어쓰지 않기 위해서입니다.</p>}
+        {product && <p className="muted">재고는 목록의 "재고" 칸에서 조정합니다.<HelpTip label="재고 조정 방법">수정 중에 들어온 주문의 재고 차감을 덮어쓰지 않으려고, 재고는 이 창이 아니라 목록의 입고·출고로만 바꿉니다.</HelpTip></p>}
         <div className="modal-foot">
           <button type="button" className="ghost" onClick={onClose}>취소</button>
           <button type="submit" disabled={saving}>{saving ? '저장 중…' : '저장'}</button>
@@ -100,7 +101,7 @@ function StockCell({ product, onSaved }: { product: AdminProduct; onSaved: () =>
     <div className="stock-cell">
       <div>
         <strong className="num">{product.stock}</strong>
-        {product.held > 0 && <div className="muted" title="결제 대기·결제 확인 중인 주문이 쥐고 있는 수량. 결제되면 판매로, 만료·취소되면 가용 재고로 돌아간다">+ 결제 대기 {product.held}</div>}
+        {product.held > 0 && <div className="muted">+ 결제 대기 {product.held}<HelpTip label="결제 대기 수량">결제 대기·결제 확인 중인 주문이 쥐고 있는 수량입니다. 결제되면 판매로, 만료·취소되면 가용 재고로 돌아옵니다.</HelpTip></div>}
       </div>
       <input type="number" step={1} placeholder="+입고 / -출고" value={delta} onChange={e => setDelta(e.target.value)}
              aria-label={`${product.name} 재고 증감 수량`} onKeyDown={e => { if (e.key === 'Enter' && valid && !busy) save() }} />
@@ -139,7 +140,7 @@ export function AdminProductsPage() {
       <div className="table-wrap">
         <table className="data-table">
           <thead>
-            <tr><th></th><th>상품</th><th>가격</th><th title="가용 재고 (결제 대기 주문이 쥔 수량은 따로 표시)">재고 · 조정</th><th>판매량</th><th>상태</th><th>판매</th><th></th></tr>
+            <tr><th></th><th>상품<HelpTip label="AI 태그">상품 아래의 "AI 태그"는 AI가 상품 정보를 보고 붙인 검색어입니다. 손님이 이 말로 검색해도 이 상품이 나옵니다. 아직 붙지 않은 상품은 API 키가 있을 때 1분 안팎에 붙습니다.</HelpTip></th><th>가격</th><th>재고 · 조정<HelpTip label="재고 · 조정">가용 재고입니다. 결제 대기 주문이 쥔 수량은 따로 표시합니다. 숫자를 덮어쓰지 않고 +입고 / -출고로만 조정합니다.</HelpTip></th><th>판매량</th><th>상태</th><th>판매</th><th></th></tr>
           </thead>
           <tbody>
             {visible?.map(p => (
@@ -148,11 +149,11 @@ export function AdminProductsPage() {
                 <td>
                   <div className="cell-title">{p.active ? <Link to={`/products/${p.id}`}>{p.name}</Link> : p.name}</div>
                   <div className="muted">#{p.id} · {p.categoryLabel} › {p.subCategoryLabel}{p.perUserLimit ? ` · 1인 ${p.perUserLimit}개` : ''}</div>
-                  <div className="muted tag-line"
-                       title={`AI가 상품 정보를 보고 붙인 검색어. 손님이 이 말로 검색해도 이 상품이 나온다${p.searchTags.length > 0 ? `\n${p.searchTags.join(', ')}` : ''}`}>
+                  <div className="muted tag-line">
                     {p.taggedAt === null
-                      ? (p.active ? 'AI 태그 대기 중 (API 키가 있으면 1분 안팎에 붙음)' : 'AI 태그 없음 (판매 중지)')
+                      ? (p.active ? 'AI 태그 대기 중' : 'AI 태그 없음 (판매 중지)')
                       : p.searchTags.length > 0 ? `AI 태그: ${p.searchTags.join(', ')}` : 'AI 태그 없음'}
+
                   </div>
                 </td>
                 <td className="nowrap">
