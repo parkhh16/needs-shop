@@ -262,9 +262,13 @@ erDiagram
 
 ## 화면 구성
 
-| 홈 (모바일 다크) | 상품 상세 (PC 라이트) | 상품 상세 (모바일 다크) |
-|:-:|:-:|:-:|
-| <img src="docs/design/shots/final/shop.mobile.dark.top.png" alt="홈 모바일 다크" width="200"> | <img src="docs/design/shots/final/product.pc.light.top.png" alt="상세 PC 라이트" width="420"> | <img src="docs/design/shots/final/product.mobile.dark.top.png" alt="상세 모바일 다크" width="200"> |
+| 홈 (PC 라이트) | 홈 (모바일 다크) |
+|:-:|:-:|
+| <img src="docs/design/shots/final/shop.pc.light.top.png" alt="홈 PC 라이트" width="420"> | <img src="docs/design/shots/final/shop.mobile.dark.top.png" alt="홈 모바일 다크" width="200"> |
+
+| 상품 상세 (PC 라이트) | 상품 상세 (모바일 다크) |
+|:-:|:-:|
+| <img src="docs/design/shots/final/product.pc.light.top.png" alt="상세 PC 라이트" width="420"> | <img src="docs/design/shots/final/product.mobile.dark.top.png" alt="상세 모바일 다크" width="200"> |
 
 위 이미지는 화면 맨 위 부분만 잘라낸 것이고, 전체 화면은 `docs/design/shots/final/`의 `.top` 없는 파일입니다. 전/후 비교는 [BEFORE_AFTER.md](docs/design/shots/BEFORE_AFTER.md)에 있습니다.
 
