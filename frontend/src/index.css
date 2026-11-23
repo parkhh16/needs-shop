@@ -248,9 +248,12 @@ code { font-family: ui-monospace, 'Cascadia Code', Consolas, monospace; font-siz
 .low-stock { margin-bottom: var(--space-6); }
 .low-stock h2 { margin: 0; font-size: var(--fs-lg); font-weight: var(--fw-black); letter-spacing: var(--ls-tight); }
 .low-stock .muted { margin: 2px 0 var(--space-3); }
-/* 남은 수량 레일은 모든 폭에서 한 줄 가로 스크롤. 격자로 두면 PC에서 6개가 4+2로 접혀 고아 줄이 생기고 전체 상품이 아래로 밀린다 */
-.rail-cards { display: flex; gap: var(--space-4); overflow-x: auto; scroll-snap-type: x proximity; padding: 4px 4px var(--space-2); margin: -4px; }
-.rail-cards > .card { flex: 0 0 232px; scroll-snap-align: start; }
+/* 데스크톱은 아래 전체 상품과 같은 열 폭의 격자, 모바일만 가로로 민다 */
+.rail-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--space-6) var(--space-4); }
+@media (max-width: 700px) {
+  .rail-cards { display: flex; gap: var(--space-4); overflow-x: auto; scroll-snap-type: x proximity; padding: 4px 4px var(--space-2); margin: -4px; }
+  .rail-cards > .card { flex: 0 0 220px; scroll-snap-align: start; }
+}
 
 .shop-head h2 { margin: 4px 0 var(--space-3); font-size: 28px; font-weight: var(--fw-black); letter-spacing: var(--ls-tight); word-break: keep-all; overflow-wrap: break-word; }
 .shop-head.compact h2 { margin-top: 0; font-size: 20px; }
