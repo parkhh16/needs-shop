@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { adminApi, type DemandNeed, type DemandView, type SearchMatch } from '../../api'
 import { useApp } from '../../context/AppContext'
+import { HelpTip } from '../../components/HelpTip'
 
 const CATEGORY: Record<string, string> = {
   KEYBOARD: '키보드', MOUSE: '마우스', MONITOR: '모니터', AUDIO: '오디오', ACCESSORY: '액세서리', OTHER: '취급 안 하는 종류',
@@ -64,8 +65,8 @@ export function AdminDemandPage() {
     <div className="admin-body">
       {view.demoSearches > 0 && (
         <div className="result-box">
-          검색 기록 중 <strong>{view.demoSearches}건</strong>은 화면 시연용으로 만든 데이터예요 (실제 손님의 검색이 아님).
-          결과 상태는 실제 검색으로 돌려서 나온 값입니다.
+          검색 기록 중 <strong>{view.demoSearches}건</strong>은 시연용 데이터예요.
+          <HelpTip label="시연용 데이터">실제 손님의 검색이 아니에요. 결과 상태는 실제 검색으로 돌려서 나온 값입니다.</HelpTip>
         </div>
       )}
 
@@ -74,16 +75,15 @@ export function AdminDemandPage() {
           <h3>AI 정리</h3>
           <div className="demand-actions">
             {report && <span className="muted">{new Date(report.createdAt).toLocaleString('ko-KR')} · 최근 {report.days}일 · 못 찾은 검색 {report.failedSearches}건</span>}
-            <button className="ghost small" onClick={generate} disabled={busy || !view.aiEnabled}
-                    title={view.aiEnabled ? 'Gemini 응답을 기다립니다. 보통 10초 안팎, 붐비면 서버가 몇 번 다시 시도해서 30초쯤 걸릴 수 있습니다' : '서버에 GEMINI_API_KEY가 없어 AI 정리를 할 수 없습니다'}>
-              {busy ? '정리하는 중… (AI가 붐비면 30초쯤 걸릴 수 있어요)' : '지금 다시 정리'}
+            <button className="ghost small" onClick={generate} disabled={busy || !view.aiEnabled}>
+              {busy ? '정리하는 중…' : '지금 다시 정리'}
             </button>
+            <HelpTip label="지금 다시 정리">{view.aiEnabled ? 'AI 응답을 기다려요. 보통 10초 안팎이고, 붐비면 서버가 다시 시도해서 30초쯤 걸릴 수 있어요.' : '서버에 AI 키(GEMINI_API_KEY)가 없어 정리할 수 없어요.'}</HelpTip>
           </div>
         </div>
         {!report && (
           <p className="muted">
-            아직 정리한 결과가 없어요. 매일 새벽 4시에 정리하고, 버튼으로 바로 정리할 수도 있어요.
-            {!view.aiEnabled && ' (지금은 AI 키가 없어 아래의 집계만 볼 수 있어요.)'}
+            아직 정리한 결과가 없어요. <HelpTip label="정리 시점">매일 새벽 4시에 자동으로 정리하고, 버튼으로 바로 정리할 수도 있어요.{!view.aiEnabled && ' 지금은 AI 키가 없어 아래의 집계만 볼 수 있어요.'}</HelpTip>
           </p>
         )}
         {report && report.needs.length === 0 && <p className="muted">정리할 만한 못 찾은 검색이 없었어요.</p>}
@@ -109,7 +109,8 @@ export function AdminDemandPage() {
         )}
         {ungrouped.length > 0 && (
           <p className="muted small-note">
-            AI가 어느 묶음에도 넣지 않은 검색어: {quote(ungrouped.map(f => f.query))}
+            묶이지 않은 검색어: {quote(ungrouped.map(f => f.query))}
+            <HelpTip label="묶이지 않은 검색어">AI가 어느 묶음에도 넣지 않은 검색어예요. 빠뜨린 것인지 직접 확인해 보세요.</HelpTip>
           </p>
         )}
       </section>
@@ -117,7 +118,7 @@ export function AdminDemandPage() {
       <section className="panel">
         <div className="panel-head">
           <h3>못 찾은 검색어</h3>
-          <span className="muted">최근 {view.days}일 · AI 없이 검색 기록에서 센 값</span>
+          <span className="muted">최근 {view.days}일 <HelpTip label="집계 방식">AI 없이 검색 기록에서 직접 센 값이에요.</HelpTip></span>
         </div>
         {view.failed.length === 0 && <p className="muted">못 찾은 검색이 없어요.</p>}
         {view.failed.length > 0 && (
