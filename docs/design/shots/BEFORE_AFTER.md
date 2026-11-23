@@ -11,6 +11,15 @@
 | 상세 PC 라이트 | [r3-before/product.pc.light.png](r3-before/product.pc.light.png) (높이 1969) | [final/product.pc.light.png](final/product.pc.light.png) (높이 1682) | 높이 1969→1682. 설명 끝 "(1인 N개)" 중복 표기가 사라짐(칩에만 표시) |
 | 상세 모바일 다크 | [r3-before/product.mobile.dark.png](r3-before/product.mobile.dark.png) (높이 3755) | [final/product.mobile.dark.png](final/product.mobile.dark.png) (높이 3280) | 사진이 정사각→4:3으로 낮아져 수량 행이 구매 바 위로 올라옴 |
 
+### 최종 화면 8장 (PC·모바일 × 라이트·다크)
+
+README에는 맨 위만 잘라낸 `*.top.png`를 쓰고, 전체 화면은 `.top` 없는 파일입니다.
+
+| 화면 | PC 라이트 | PC 다크 | 모바일 라이트 | 모바일 다크 |
+|---|---|---|---|---|
+| 홈 | [final/shop.pc.light.png](final/shop.pc.light.png) | [final/shop.pc.dark.png](final/shop.pc.dark.png) | [final/shop.mobile.light.png](final/shop.mobile.light.png) | [final/shop.mobile.dark.png](final/shop.mobile.dark.png) |
+| 상품 상세 | [final/product.pc.light.png](final/product.pc.light.png) | [final/product.pc.dark.png](final/product.pc.dark.png) | [final/product.mobile.light.png](final/product.mobile.light.png) | [final/product.mobile.dark.png](final/product.mobile.dark.png) |
+
 ## 회차별
 
 | 회차 | 한 일 | 전 | 후 | 변화 |
