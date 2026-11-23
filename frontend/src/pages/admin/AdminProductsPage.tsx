@@ -65,7 +65,7 @@ function ProductEditor({ product, tree, onClose, onSaved }: {
           <label className="span2">한 줄 설명<input maxLength={500} value={form.description} onChange={e => set('description', e.target.value)} /></label>
           <label className="span2">상세 설명<textarea rows={3} maxLength={2000} value={form.detail} onChange={e => set('detail', e.target.value)} /></label>
         </div>
-        {product && <p className="muted">재고는 목록의 "재고" 칸에서 조정합니다.<HelpTip label="재고 조정 방법">수정 중에 들어온 주문의 재고 차감을 덮어쓰지 않으려고, 재고는 이 창이 아니라 목록의 입고·출고로만 바꿉니다.</HelpTip></p>}
+        {product && <p className="muted">재고는 목록의 "재고" 칸에서 조정합니다.</p>}
         <div className="modal-foot">
           <button type="button" className="ghost" onClick={onClose}>취소</button>
           <button type="submit" disabled={saving}>{saving ? '저장 중…' : '저장'}</button>
@@ -101,7 +101,7 @@ function StockCell({ product, onSaved }: { product: AdminProduct; onSaved: () =>
     <div className="stock-cell">
       <div>
         <strong className="num">{product.stock}</strong>
-        {product.held > 0 && <div className="muted">+ 결제 대기 {product.held}<HelpTip label="결제 대기 수량">결제 대기·결제 확인 중인 주문이 쥐고 있는 수량입니다. 결제되면 판매로, 만료·취소되면 가용 재고로 돌아옵니다.</HelpTip></div>}
+        {product.held > 0 && <div className="muted">+ 결제 대기 {product.held}</div>}
       </div>
       <input type="number" step={1} placeholder="+입고 / -출고" value={delta} onChange={e => setDelta(e.target.value)}
              aria-label={`${product.name} 재고 증감 수량`} onKeyDown={e => { if (e.key === 'Enter' && valid && !busy) save() }} />

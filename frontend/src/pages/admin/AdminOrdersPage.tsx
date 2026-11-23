@@ -106,7 +106,7 @@ export function AdminOrdersPage() {
                         {busy === o.id ? '처리 중…' : o.status === 'PAID' ? '환불·취소' : '취소'}
                       </button>
                     )}
-                    {o.status === 'PAYING' && <><span className="muted">대사 대기</span><HelpTip label="대사 대기">결제 결과를 모르는 상태라 취소할 수 없습니다. 10초마다 도는 결제 대사가 PG에 확인해서 확정합니다.</HelpTip></>}
+                    {o.status === 'PAYING' && <><span className="muted">결제 확인 중</span></>}
                   </td>
                 </tr>
               ))}
