@@ -105,7 +105,7 @@ export function AdminActivityPage() {
         <div className="table-wrap" tabIndex={0} role="region" aria-label="활동 로그 표 (가로로 스크롤할 수 있어요)">
           <table className="data-table">
             <thead>
-              <tr><th>시각</th><th>사용자</th><th>이벤트</th><th>내용</th><th>결과 <HelpTip label="결과">HTTP 응답 코드예요. 2xx는 성공, 4xx는 요청 오류, 5xx는 서버 오류입니다.</HelpTip></th><th>응답</th><th>traceId <HelpTip label="traceId">요청 하나를 따라가는 번호예요. 서버 로그에서 같은 번호를 찾으면 그 요청의 기록을 이어서 볼 수 있어요.</HelpTip></th></tr>
+              <tr><th>시각</th><th>사용자</th><th>이벤트</th><th>내용</th><th>결과</th><th>응답</th><th>traceId <HelpTip label="traceId">요청 하나를 따라가는 번호예요. 서버 로그에서 같은 번호를 찾으면 그 요청의 기록을 이어서 볼 수 있어요.</HelpTip></th></tr>
             </thead>
             <tbody>
               {logs.map(l => (

@@ -65,8 +65,7 @@ export function AdminDemandPage() {
     <div className="admin-body">
       {view.demoSearches > 0 && (
         <div className="result-box">
-          검색 기록 중 <strong>{view.demoSearches}건</strong>은 시연용 데이터예요.
-          <HelpTip label="시연용 데이터">실제 손님의 검색이 아니에요. 결과 상태는 실제 검색으로 돌려서 나온 값입니다.</HelpTip>
+          검색 기록 중 <strong>{view.demoSearches}건</strong>은 시연용 데이터예요 (실제 손님 검색이 아님).
         </div>
       )}
 
@@ -83,7 +82,7 @@ export function AdminDemandPage() {
         </div>
         {!report && (
           <p className="muted">
-            아직 정리한 결과가 없어요. <HelpTip label="정리 시점">매일 새벽 4시에 자동으로 정리하고, 버튼으로 바로 정리할 수도 있어요.{!view.aiEnabled && ' 지금은 AI 키가 없어 아래의 집계만 볼 수 있어요.'}</HelpTip>
+            아직 정리한 결과가 없어요. 매일 새벽 4시에 자동으로 정리해요.{!view.aiEnabled && ' (지금은 AI 키가 없어 집계만 볼 수 있어요.)'}
           </p>
         )}
         {report && report.needs.length === 0 && <p className="muted">정리할 만한 못 찾은 검색이 없었어요.</p>}
@@ -109,8 +108,7 @@ export function AdminDemandPage() {
         )}
         {ungrouped.length > 0 && (
           <p className="muted small-note">
-            묶이지 않은 검색어: {quote(ungrouped.map(f => f.query))}
-            <HelpTip label="묶이지 않은 검색어">AI가 어느 묶음에도 넣지 않은 검색어예요. 빠뜨린 것인지 직접 확인해 보세요.</HelpTip>
+            AI가 묶지 않은 검색어: {quote(ungrouped.map(f => f.query))}
           </p>
         )}
       </section>
@@ -118,7 +116,7 @@ export function AdminDemandPage() {
       <section className="panel">
         <div className="panel-head">
           <h3>못 찾은 검색어</h3>
-          <span className="muted">최근 {view.days}일 <HelpTip label="집계 방식">AI 없이 검색 기록에서 직접 센 값이에요.</HelpTip></span>
+          <span className="muted">최근 {view.days}일 · AI 없이 검색 기록에서 센 값</span>
         </div>
         {view.failed.length === 0 && <p className="muted">못 찾은 검색이 없어요.</p>}
         {view.failed.length > 0 && (

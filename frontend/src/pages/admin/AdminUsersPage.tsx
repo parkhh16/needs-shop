@@ -60,8 +60,7 @@ export function AdminUsersPage() {
                     <td>{u.email}</td>
                     <td className="nowrap">
                       <span className={`user-status u-${u.status.toLowerCase()}`}>{STATUS_LABEL[u.status]}</span>
-                      {u.locked && <span className="user-status u-locked">잠김</span>}
-                      {u.locked && <HelpTip label="잠김">로그인에 5회 실패해서 잠겼어요. 관리 칸의 '잠금 해제'로 풀 수 있어요.</HelpTip>}
+                      {u.locked && <span className="user-status u-locked">잠김 (5회 실패)</span>}
                       {!u.locked && u.failedLoginCount > 0 && <div className="muted">로그인 실패 {u.failedLoginCount}회</div>}
                     </td>
                     <td className="num">{u.orderCount}</td>
