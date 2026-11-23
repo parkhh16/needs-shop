@@ -262,15 +262,12 @@ erDiagram
 
 ## 화면 구성
 
-| 홈 (PC 라이트) | 홈 (모바일 다크) |
-|:-:|:-:|
-| <img src="docs/design/shots/final/shop.pc.light.top.png" alt="홈 PC 라이트" width="420"> | <img src="docs/design/shots/final/shop.mobile.dark.top.png" alt="홈 모바일 다크" width="200"> |
+| | 라이트 | 다크 |
+|:-:|:-:|:-:|
+| **홈** | <a href="docs/design/shots/readme/home.light.png"><img src="docs/design/shots/readme/home.light.png" alt="홈 라이트" width="430"></a> | <a href="docs/design/shots/readme/home.dark.png"><img src="docs/design/shots/readme/home.dark.png" alt="홈 다크" width="430"></a> |
+| **상품 상세** | <a href="docs/design/shots/readme/detail.light.png"><img src="docs/design/shots/readme/detail.light.png" alt="상품 상세 라이트" width="430"></a> | <a href="docs/design/shots/readme/detail.dark.png"><img src="docs/design/shots/readme/detail.dark.png" alt="상품 상세 다크" width="430"></a> |
 
-| 상품 상세 (PC 라이트) | 상품 상세 (모바일 다크) |
-|:-:|:-:|
-| <img src="docs/design/shots/final/product.pc.light.top.png" alt="상세 PC 라이트" width="420"> | <img src="docs/design/shots/final/product.mobile.dark.top.png" alt="상세 모바일 다크" width="200"> |
-
-위 이미지는 화면 맨 위 부분만 잘라낸 것이고, 전체 화면은 `docs/design/shots/final/`의 `.top` 없는 파일입니다. 전/후 비교는 [BEFORE_AFTER.md](docs/design/shots/BEFORE_AFTER.md)에 있습니다.
+PC 화면(1280×800)이고, 이미지를 누르면 원본 크기로 열립니다. 전/후 비교와 모바일 화면은 [BEFORE_AFTER.md](docs/design/shots/BEFORE_AFTER.md)에 있습니다. 화면의 상품·후기·판매 수치는 데모 데이터입니다.
 
 | 화면 | 경로 | 주요 기능 |
 |---|---|---|
