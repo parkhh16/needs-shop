@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { adminApi, type UserOption, type UserStatus } from '../../api'
 import { useApp } from '../../context/AppContext'
+import { HelpTip } from '../../components/HelpTip'
 
 const STATUS_LABEL: Record<UserStatus, string> = { ACTIVE: '정상', SUSPENDED: '정지', WITHDRAWN: '탈퇴' }
 
@@ -45,7 +46,7 @@ export function AdminUsersPage() {
         <div className="table-wrap">
           <table className="data-table">
             <thead>
-              <tr><th>회원</th><th>이메일</th><th>상태</th><th>주문</th><th>가입일</th><th>최근 로그인</th><th>관리</th></tr>
+              <tr><th>회원</th><th>이메일</th><th>상태</th><th>주문</th><th>가입일</th><th>최근 로그인</th><th>관리 <HelpTip label="관리">정지하면 로그인 중인 기기도 바로 끊기고 다시 로그인할 수 없어요. 강제 로그아웃은 모든 기기의 로그인만 끊고 계정은 그대로 둡니다.</HelpTip></th></tr>
             </thead>
             <tbody>
               {users.map(u => {
@@ -59,7 +60,8 @@ export function AdminUsersPage() {
                     <td>{u.email}</td>
                     <td className="nowrap">
                       <span className={`user-status u-${u.status.toLowerCase()}`}>{STATUS_LABEL[u.status]}</span>
-                      {u.locked && <span className="user-status u-locked" title="로그인 5회 실패로 잠김">잠김</span>}
+                      {u.locked && <span className="user-status u-locked">잠김</span>}
+                      {u.locked && <HelpTip label="잠김">로그인에 5회 실패해서 잠겼어요. 관리 칸의 '잠금 해제'로 풀 수 있어요.</HelpTip>}
                       {!u.locked && u.failedLoginCount > 0 && <div className="muted">로그인 실패 {u.failedLoginCount}회</div>}
                     </td>
                     <td className="num">{u.orderCount}</td>
