@@ -1,28 +1,35 @@
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { HelpTip } from '../../components/HelpTip'
 
 export const ADMIN_SECTIONS = [
   {
     to: '/admin', label: '대시보드', title: '운영 대시보드',
+    short: '최근 24시간 서비스 상태를 한눈에 봅니다.',
     desc: '최근 24시간 동안 서비스가 건강한지 한눈에 봅니다. 요청 수, 주문 수, 서버 에러율, 평균 응답 속도를 확인하세요.',
   },
   {
     to: '/admin/activity', label: '활동 로그', title: '활동 로그',
+    short: '누가 언제 무엇을 했는지 서버 기록을 조회합니다.',
     desc: '누가, 언제, 무엇을 했고 결과가 어땠는지 서버에 저장된 기록을 조회합니다. 사용자를 고르면 그 사람의 타임라인을 볼 수 있어요. CS 문의가 오면 traceId로 해당 요청을 바로 찾을 수 있습니다.',
   },
   {
     to: '/admin/users', label: '회원 관리', title: '회원 관리',
+    short: '회원 조회, 정지·해제, 강제 로그아웃, 잠금 해제.',
     desc: '가입한 회원을 조회하고 정지·정지 해제, 강제 로그아웃, 로그인 잠금 해제를 합니다. 정지하거나 강제 로그아웃하면 이미 로그인해 있던 세션도 즉시 끊깁니다. 탈퇴 회원은 개인정보가 파기된 상태로 표시됩니다.',
   },
   {
     to: '/admin/products', label: '상품 관리', title: '상품 관리',
+    short: '상품 등록·수정, 가격과 구매 제한 설정, 재고 입고·출고.',
     desc: '상품을 등록·수정하고 가격(정가와 판매가), 1인 구매 제한을 설정합니다. 재고는 덮어쓰지 않고 입고·출고로만 조정합니다. 판매 중지하면 쇼핑몰에서 바로 숨겨집니다.',
   },
   {
     to: '/admin/orders', label: '주문 관리', title: '주문 관리',
+    short: '주문을 상태별로 조회하고 취소·환불합니다.',
     desc: '전체 주문을 상태별로 조회하고 취소합니다. 결제 대기 주문은 즉시 취소되고, 결제 완료 주문은 PG 환불이 성공한 경우에만 취소됩니다. 취소하면 재고가 복구됩니다. 정합성 점검으로 결제 완료 주문과 승인 금액이 맞는지 확인할 수 있습니다.',
   },
   {
     to: '/admin/demand', label: '등록 추천', title: '등록 추천',
+    short: '손님이 못 찾은 검색어로 등록할 상품을 추천합니다.',
     desc: '손님이 검색했지만 원하는 상품을 찾지 못한 검색어를 모았습니다. AI가 같은 것을 찾는 검색어끼리 묶고, 우리 상품으로 다시 검색해서 "없는 상품(등록 추천)"과 "있는데 손님 말로는 못 찾는 상품"으로 나눕니다. 검색 횟수는 AI가 아니라 검색 기록에서 직접 셉니다.',
   },
 ]
@@ -36,8 +43,8 @@ export function AdminLayout() {
         {ADMIN_SECTIONS.map(s => <NavLink key={s.to} to={s.to} end={s.to === '/admin'}>{s.label}</NavLink>)}
       </nav>
       <header className="admin-intro">
-        <h2>{current.title}</h2>
-        <p>{current.desc}</p>
+        <h2>{current.title}<HelpTip label={current.title}>{current.desc}</HelpTip></h2>
+        <p>{current.short}</p>
       </header>
       <Outlet />
     </div>

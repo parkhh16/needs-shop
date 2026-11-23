@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { adminApi, type AdminOrder, type Mismatch, type OrderStatus, type UserOption } from '../../api'
+import { HelpTip } from '../../components/HelpTip'
 import { useApp } from '../../context/AppContext'
 import { won } from '../../format'
 
@@ -71,8 +72,8 @@ export function AdminOrdersPage() {
           </select>
         </label>
         <span className="muted">총 {total}건</span>
-        <button className="ghost small" onClick={checkConsistency}
-                title="결제 완료 주문의 금액과 승인된 결제 금액 합계를 비교합니다">정합성 점검</button>
+        <button className="ghost small" onClick={checkConsistency}>정합성 점검</button>
+        <HelpTip label="정합성 점검">결제 완료 주문의 금액과 승인된 결제 금액 합계를 비교해서, 서로 다른 주문이 있으면 알려줍니다.</HelpTip>
       </div>
       {mismatches && (
         mismatches.length === 0
@@ -105,7 +106,7 @@ export function AdminOrdersPage() {
                         {busy === o.id ? '처리 중…' : o.status === 'PAID' ? '환불·취소' : '취소'}
                       </button>
                     )}
-                    {o.status === 'PAYING' && <span className="muted" title="결제 결과를 모르는 상태라 취소할 수 없습니다. 10초마다 도는 결제 대사가 PG에 확인해서 확정합니다.">대사 대기</span>}
+                    {o.status === 'PAYING' && <><span className="muted">대사 대기</span><HelpTip label="대사 대기">결제 결과를 모르는 상태라 취소할 수 없습니다. 10초마다 도는 결제 대사가 PG에 확인해서 확정합니다.</HelpTip></>}
                   </td>
                 </tr>
               ))}
