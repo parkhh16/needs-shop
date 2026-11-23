@@ -101,7 +101,7 @@ export function AdminActivityPage() {
       {logs?.length === 0 && <div className="empty small"><p>조건에 맞는 활동이 없습니다.</p></div>}
 
       {logs && logs.length > 0 && view === 'table' && (
-        <div className="table-wrap">
+        <div className="table-wrap" tabIndex={0} role="region" aria-label="활동 로그 표 (가로로 스크롤할 수 있어요)">
           <table className="data-table">
             <thead>
               <tr><th>시각</th><th>사용자</th><th>이벤트</th><th>내용</th><th>결과</th><th>응답</th><th>traceId</th></tr>

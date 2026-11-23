@@ -88,6 +88,8 @@ export function ProductDetailPage() {
     }
   }
 
+  // 구매 제한은 아래 칩에 이미 나오므로 설명 끝의 "(1인 N개)" 중복 표기는 화면에서만 뺀다
+  const shortDesc = product.perUserLimit ? product.description.replace(/\s*\(1인\s*\d+개\)\s*$/, '') : product.description
   const lowStock = !soldOut && product.stock <= LOW_STOCK_THRESHOLD
 
   return (
@@ -112,7 +114,7 @@ export function ProductDetailPage() {
             <Link to={`/?category=${product.category}&sub=${product.subCategory}`}>{product.subCategoryLabel}</Link>
           </nav>
           <h1>{product.name}</h1>
-          <p className="buy-desc">{product.description}</p>
+          <p className="buy-desc">{shortDesc}</p>
 
           <div className="price-block">
             {product.discountRate > 0 && <span className="discount big">{product.discountRate}%</span>}

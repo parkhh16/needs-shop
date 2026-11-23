@@ -106,17 +106,17 @@ export function MyActivityPage() {
                 </div>
                 {o.status === 'PENDING_PAYMENT' && (
                   <div className="order-note info">
-                    <p>10분 안에 결제하면 주문이 확정돼요 · <Countdown until={o.expiresAt} /></p>
+                    <p>10분 안에 결제하면 주문이 확정돼요.<br /><Countdown until={o.expiresAt} /></p>
                     <button className="order-pay" onClick={() => pay(o)} disabled={paying === o.id} aria-busy={paying === o.id}>{paying === o.id ? '결제 중…' : '결제하기'}</button>
                   </div>
                 )}
                 {o.status === 'PAYING' && (
                   <div className="order-note unc" role="status">
                     <span className="ring-dot" aria-hidden="true" />
-                    <p>결제 결과를 확인하고 있어요. 잠시만 기다려주세요.</p>
+                    <p><strong>결제 결과를 확인하고 있어요.</strong> 확인이 끝날 때까지 이 주문은 취소하거나 다시 결제할 수 없어요. 결과가 나오면 이 화면이 자동으로 바뀝니다.</p>
                   </div>
                 )}
-                {o.status === 'EXPIRED' && <div className="order-note neutral"><p>결제 기한이 지나 주문이 자동 취소되었어요.</p></div>}
+                {o.status === 'EXPIRED' && <div className="order-note neutral"><p>결제 기한이 지나 주문이 자동 취소되었어요. 원하시면 상품 페이지에서 다시 주문해 주세요.</p></div>}
                 {o.status === 'CANCELLED' && <div className="order-note neutral"><p>취소된 주문이에요. 결제하셨다면 환불이 진행됩니다.</p></div>}
               </article>
             ))}
