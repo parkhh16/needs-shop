@@ -1,8 +1,10 @@
 package com.needsshop.idempotency;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.needsshop.mockpg.ChaosSettings;
 import com.needsshop.product.Product;
 import com.needsshop.support.TestFixtures;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -28,13 +30,20 @@ class OrderApiTest {
 
     @Autowired TestRestTemplate rest;
     @Autowired TestFixtures fixtures;
+    @Autowired ChaosSettings chaos;
 
     private Product product;
 
     @BeforeEach
     void setUp() {
         fixtures.clean();
+        chaos.set(new ChaosSettings.Snapshot(0, 0, 0, 0, false)); // 다른 테스트가 남긴 PG 장애 설정에 기대지 않는다
         product = fixtures.product(100);
+    }
+
+    @AfterEach
+    void tearDown() {
+        chaos.reset();
     }
 
     @Test
@@ -117,10 +126,13 @@ class OrderApiTest {
 
         List<HttpStatusCode> statuses = responses.stream().map(ResponseEntity::getStatusCode).toList();
         assertThat(statuses).as("응답 코드").filteredOn(s -> s == HttpStatus.OK).hasSize(1);
-        assertThat(statuses).as("나머지는 사용자에게 500이 아니라 409").filteredOn(s -> s != HttpStatus.OK)
-                .allMatch(s -> s == HttpStatus.CONFLICT);
-        assertThat(fixtures.count("payment")).as("PG를 부르기 전에 남기는 결제 시도 기록").isEqualTo(1);
-        assertThat(fixtures.countWhere("payment", "status = 'APPROVED'")).as("승인된 결제").isEqualTo(1);
+        List<ResponseEntity<JsonNode>> rejected = responses.stream().filter(r -> r.getStatusCode() != HttpStatus.OK).toList();
+        assertThat(rejected).as("나머지는 사용자에게 500이 아니라 409, 주문 상태 충돌(O002)").allSatisfy(r -> {
+            assertThat(r.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+            assertThat(r.getBody().get("code").asText()).isEqualTo("O002");
+        });
+        assertThat(fixtures.paymentCount(orderId)).as("PG를 부르기 전에 남기는 결제 시도 기록").isEqualTo(1);
+        assertThat(fixtures.paymentCount(orderId, "APPROVED")).as("승인된 결제").isEqualTo(1);
         assertThat(fixtures.orderStatus(orderId)).isEqualTo("PAID");
         assertThat(fixtures.stockOf(product.getId())).isEqualTo(99);
     }

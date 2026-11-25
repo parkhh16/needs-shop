@@ -33,9 +33,12 @@ public class TestFixtures {
         return jdbc.queryForObject("select count(*) from " + table, Integer.class);
     }
 
-    /** where 절은 테스트 코드에서만 넘기는 고정 문자열이다 */
-    public int countWhere(String table, String where) {
-        return jdbc.queryForObject("select count(*) from " + table + " where " + where, Integer.class);
+    public int paymentCount(long orderId) {
+        return jdbc.queryForObject("select count(*) from payment where order_id = ?", Integer.class, orderId);
+    }
+
+    public int paymentCount(long orderId, String status) {
+        return jdbc.queryForObject("select count(*) from payment where order_id = ? and status = ?", Integer.class, orderId, status);
     }
 
     public String orderStatus(long orderId) {
