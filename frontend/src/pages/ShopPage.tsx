@@ -65,6 +65,7 @@ export function ShopPage() {
   const { fail } = useApp()
   const [params, setParams] = useSearchParams()
   const [products, setProducts] = useState<Product[] | null>(null)
+  const [lowOpen, setLowOpen] = useState(false)
   const [ai, setAi] = useState<AiSearchResult | null>(null)
   const [tree, setTree] = useState<CategoryTree | null>(null)
   const [failedQ, setFailedQ] = useState<string | null>(null)
@@ -210,10 +211,16 @@ export function ShopPage() {
           <CategoryRail tree={tree} failed={treeFailed} category={category} sub={sub} searching={!!q} />
 
           {lowStock.length > 0 && (
-            <section className="low-stock" aria-labelledby="low-stock-title">
+            <section className={`low-stock${lowOpen ? ' open' : ''}`} aria-labelledby="low-stock-title">
               <h2 id="low-stock-title">남은 수량이 적은 상품</h2>
               <p className="muted">수량이 소진되면 판매가 끝나요</p>
-              <div className="rail-cards">{lowStock.map(p => <ProductCard key={p.id} product={p} />)}</div>
+              <div className="rail-cards" id="low-stock-cards">{lowStock.map(p => <ProductCard key={p.id} product={p} />)}</div>
+              {lowStock.length > 4 && (
+                <button type="button" className="low-more" aria-expanded={lowOpen} aria-controls="low-stock-cards"
+                        onClick={() => setLowOpen(o => !o)}>
+                  {lowOpen ? '접기' : `더보기 (${lowStock.length - 4}개)`}
+                </button>
+              )}
             </section>
           )}
           {isHome && head}
