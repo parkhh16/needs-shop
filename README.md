@@ -5,6 +5,15 @@
 "재고 100개짜리 상품에 1,000명이 동시에 주문하면 어떻게 될까?"라는 질문에서 시작한 개인 프로젝트입니다.
 트래픽이 한순간에 몰리는 커머스에서 **재고와 돈이 어긋나지 않게** 만드는 것을 목표로, 문제를 직접 재현하고 원인을 찾아 고친 뒤 수치로 확인하는 과정을 기록했습니다.
 
+**왜 "니즈샵"인가**: 손님이 찾는 것(니즈)을 말하듯 쓴 검색어("5만원 이하 무선 마우스")로 받아 상품과 잇고, 못 찾은 검색어는 판매자에게 등록 추천으로 돌려줍니다. 그렇게 이어진 니즈가 한정된 재고 앞에서 **초과 판매나 이중 결제 없이** 충족되도록 주문·결제를 만든 것이 이 프로젝트입니다.
+
+| | 라이트 | 다크 |
+|:-:|:-:|:-:|
+| **홈** | <a href="docs/design/shots/readme/home.light.png"><img src="docs/design/shots/readme/home.light.png" alt="홈 라이트" width="430"></a> | <a href="docs/design/shots/readme/home.dark.png"><img src="docs/design/shots/readme/home.dark.png" alt="홈 다크" width="430"></a> |
+| **상품 상세** | <a href="docs/design/shots/readme/detail.light.png"><img src="docs/design/shots/readme/detail.light.png" alt="상품 상세 라이트" width="430"></a> | <a href="docs/design/shots/readme/detail.dark.png"><img src="docs/design/shots/readme/detail.dark.png" alt="상품 상세 다크" width="430"></a> |
+
+PC 화면(1280×800)이고, 이미지를 누르면 원본 크기로 열립니다. 전/후 비교와 모바일 화면은 [BEFORE_AFTER.md](docs/design/shots/BEFORE_AFTER.md)에 있습니다. 화면의 상품·후기·판매 수치는 데모 데이터입니다.
+
 <br>
 
 > **30초 요약**
@@ -262,12 +271,7 @@ erDiagram
 
 ## 화면 구성
 
-| | 라이트 | 다크 |
-|:-:|:-:|:-:|
-| **홈** | <a href="docs/design/shots/readme/home.light.png"><img src="docs/design/shots/readme/home.light.png" alt="홈 라이트" width="430"></a> | <a href="docs/design/shots/readme/home.dark.png"><img src="docs/design/shots/readme/home.dark.png" alt="홈 다크" width="430"></a> |
-| **상품 상세** | <a href="docs/design/shots/readme/detail.light.png"><img src="docs/design/shots/readme/detail.light.png" alt="상품 상세 라이트" width="430"></a> | <a href="docs/design/shots/readme/detail.dark.png"><img src="docs/design/shots/readme/detail.dark.png" alt="상품 상세 다크" width="430"></a> |
-
-PC 화면(1280×800)이고, 이미지를 누르면 원본 크기로 열립니다. 전/후 비교와 모바일 화면은 [BEFORE_AFTER.md](docs/design/shots/BEFORE_AFTER.md)에 있습니다. 화면의 상품·후기·판매 수치는 데모 데이터입니다.
+화면별 기능은 아래 표와 같습니다. 화면 이미지는 맨 위에 있습니다.
 
 | 화면 | 경로 | 주요 기능 |
 |---|---|---|
