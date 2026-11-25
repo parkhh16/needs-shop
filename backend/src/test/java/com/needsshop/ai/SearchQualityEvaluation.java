@@ -117,16 +117,25 @@ class SearchQualityEvaluation {
         return list.stream().filter(g -> exact ? g.exact() : g.hit()).count();
     }
 
+    /**
+     * cases.json: 규칙을 다듬으면서 본 질의 72개. holdout.json: 검색 코드를 보지 않고 정답을 먼저 커밋한 처음 보는 질의.
+     * 두 셋은 리포트에서 묶음(set)으로 따로 집계된다
+     */
+    private static final List<String> CASE_FILES = List.of("search-eval/cases.json", "search-eval/holdout.json",
+            "search-eval/holdout2.json");
+
     private List<Case> loadCases() throws Exception {
-        try (InputStream in = new ClassPathResource("search-eval/cases.json").getInputStream()) {
-            JsonNode root = objectMapper.readTree(in);
-            List<Case> cases = new ArrayList<>();
-            for (JsonNode n : root.get("cases")) {
-                List<String> expect = new ArrayList<>();
-                n.get("expect").forEach(e -> expect.add(e.asText()));
-                cases.add(new Case(n.get("set").asText(), n.get("tag").asText(), n.get("q").asText(), expect));
+        List<Case> cases = new ArrayList<>();
+        for (String file : CASE_FILES) {
+            try (InputStream in = new ClassPathResource(file).getInputStream()) {
+                JsonNode root = objectMapper.readTree(in);
+                for (JsonNode n : root.get("cases")) {
+                    List<String> expect = new ArrayList<>();
+                    n.get("expect").forEach(e -> expect.add(e.asText()));
+                    cases.add(new Case(n.get("set").asText(), n.get("tag").asText(), n.get("q").asText(), expect));
+                }
             }
-            return cases;
         }
+        return cases;
     }
 }

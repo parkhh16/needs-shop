@@ -4,6 +4,8 @@ import com.needsshop.product.ProductCategory;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 class RuleBasedQueryParserTest {
@@ -146,6 +148,21 @@ class RuleBasedQueryParserTest {
 
         assertThat(parser.parse("장패드").keyword()).isEqualTo("장패드");
         assertThat(RuleBasedQueryParser.splitCompounds("모니터랑 허브")).isEqualTo("모니터랑 허브");
+    }
+
+    @Test
+    @DisplayName("'모니터암'은 모니터가 아니라 액세서리(암)다. 한 글자 '암'은 종류 단어 바로 뒤나 따로 쓸 때만 종류로 본다")
+    void monitorArm() {
+        for (String q : List.of("모니터암", "모니터 암")) {
+            SearchFilter f = parser.parse(q);
+            assertThat(f.category()).as(q).isEqualTo(ProductCategory.ACCESSORY);
+            assertThat(f.keyword()).as(q).isEqualTo("모니터 암");
+        }
+        // 다른 말 속의 '암'은 종류가 아니다
+        assertThat(parser.parse("암막 모니터").category()).isEqualTo(ProductCategory.MONITOR);
+        assertThat(RuleBasedQueryParser.splitCompounds("알람 키보드")).isEqualTo("알람 키보드");
+        // 태그 검사용 종류 단어 목록에는 한 글자 종류를 넣지 않는다 (태그 안의 '암' 글자로 오탐)
+        assertThat(RuleBasedQueryParser.typeWords()).doesNotContain("암").contains("모니터", "거치대");
     }
 
     @Test
