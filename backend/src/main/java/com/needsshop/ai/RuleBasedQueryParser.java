@@ -78,6 +78,8 @@ public class RuleBasedQueryParser {
         type(ProductCategory.ACCESSORY, true, "케이블");
         type(ProductCategory.ACCESSORY, true, "허브");
         type(ProductCategory.ACCESSORY, true, "키캡");
+        // "모니터암"의 "암". 한 글자라서 상품 종류 단어 바로 뒤에 붙었거나 따로 쓴 경우만 인정한다 (oneSyllableAt)
+        type(ProductCategory.ACCESSORY, true, "암");
     }
 
     private static void type(ProductCategory category, boolean narrow, String canonical, String... english) {
@@ -96,7 +98,8 @@ public class RuleBasedQueryParser {
 
     /** 상품 종류를 나타내는 모든 말 (영어 포함). AI 태그에 다른 종류 이름이 섞였는지 검사할 때 쓴다 */
     public static Set<String> typeWords() {
-        return TYPE_WORDS.keySet();
+        // 한 글자 종류("암")는 따로 쓸 때만 종류라서, 태그 안에 들어 있는지(contains)로 검사하면 오탐이 난다
+        return Set.copyOf(TYPE_WORDS.keySet().stream().filter(w -> w.length() >= 2).toList());
     }
 
     public SearchFilter parse(String query) {
@@ -146,7 +149,7 @@ public class RuleBasedQueryParser {
         int at = -1;
         String alias = null;
         for (String w : TYPE_WORDS.keySet()) {
-            int i = lower.lastIndexOf(w);
+            int i = w.length() == 1 ? standaloneIndex(lower, w) : lower.lastIndexOf(w);
             if (i > at || (i >= 0 && i == at && w.length() > alias.length())) {
                 at = i;
                 alias = w;
@@ -193,6 +196,14 @@ public class RuleBasedQueryParser {
     private static String splitToken(String token, int depth) {
         if (depth > 3) return token;
         for (String w : TYPE_WORDS.keySet()) {
+            if (w.length() == 1) {
+                if (token.length() < 2) continue;
+                // 한 글자 종류("암")는 다른 종류 단어 바로 뒤 끝에 붙었을 때만 띄운다: "모니터암" → "모니터 암".
+                // "암막", "알람"처럼 다른 말 속의 글자는 건드리지 않는다
+                String left = token.substring(0, token.length() - 1);
+                if (token.endsWith(w) && TYPE_WORDS.containsKey(left)) return left + " " + w;
+                continue;
+            }
             int i = token.indexOf(w);
             if (i < 0 || token.length() == w.length()) continue;
             String left = token.substring(0, i);
@@ -202,6 +213,17 @@ public class RuleBasedQueryParser {
             }
         }
         return token;
+    }
+
+    /** 한 글자 단어가 따로 쓰인(앞뒤가 공백이거나 끝) 마지막 위치. 없으면 -1 */
+    private static int standaloneIndex(String text, String w) {
+        String[] tokens = text.split(" ", -1);
+        int pos = 0, found = -1;
+        for (String t : tokens) {
+            if (t.equals(w)) found = pos;
+            pos += t.length() + 1;
+        }
+        return found;
     }
 
     /** 세 글자 이상 한글에서 마지막 글자만 다름: "키보트" ~ "키보드", "마우쓰" ~ "마우스" */

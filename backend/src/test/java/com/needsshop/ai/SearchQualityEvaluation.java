@@ -121,7 +121,8 @@ class SearchQualityEvaluation {
      * cases.json: 규칙을 다듬으면서 본 질의 72개. holdout.json: 검색 코드를 보지 않고 정답을 먼저 커밋한 처음 보는 질의.
      * 두 셋은 리포트에서 묶음(set)으로 따로 집계된다
      */
-    private static final List<String> CASE_FILES = List.of("search-eval/cases.json", "search-eval/holdout.json");
+    private static final List<String> CASE_FILES = List.of("search-eval/cases.json", "search-eval/holdout.json",
+            "search-eval/holdout2.json");
 
     private List<Case> loadCases() throws Exception {
         List<Case> cases = new ArrayList<>();
