@@ -251,6 +251,15 @@ code { font-family: ui-monospace, 'Cascadia Code', Consolas, monospace; font-siz
 /* 남은 수량 레일은 모든 폭에서 한 줄 가로 스크롤. 격자로 두면 PC에서 6개가 4+2로 접혀 고아 줄이 생기고 전체 상품이 아래로 밀린다 */
 .rail-cards { display: flex; gap: var(--space-4); overflow-x: auto; scroll-snap-type: x proximity; padding: 4px 4px var(--space-2); margin: -4px; }
 .rail-cards > .card { flex: 0 0 232px; scroll-snap-align: start; }
+.low-more { display: none; }
+/* PC(1024px 이상)는 4열 격자로 첫 4개만 보이고 더보기로 나머지를 펼친다. 가로 스크롤은 숨은 상품을 못 보고 지나치기 쉽다 */
+@media (min-width: 1024px) {
+  .rail-cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); overflow: visible; scroll-snap-type: none; padding: 0; margin: 0; }
+  .rail-cards > .card { flex: none; }
+  .low-stock:not(.open) .rail-cards > .card:nth-child(n+5) { display: none; }
+  .low-more { display: block; margin: var(--space-3) auto 0; height: 40px; padding: 0 var(--space-5); background: transparent; border: 1px solid var(--border); border-radius: var(--radius-pill); color: var(--text); font-weight: var(--fw-medium); font-size: var(--fs-md); cursor: pointer; }
+  .low-more:hover { background: var(--surface-2); }
+}
 
 .shop-head h2 { margin: 4px 0 var(--space-3); font-size: 28px; font-weight: var(--fw-black); letter-spacing: var(--ls-tight); word-break: keep-all; overflow-wrap: break-word; }
 .shop-head.compact h2 { margin-top: 0; font-size: 20px; }
