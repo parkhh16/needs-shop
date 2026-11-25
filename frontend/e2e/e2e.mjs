@@ -42,6 +42,18 @@ if (!target) throw new Error('주문 가능한 상품이 없다')
     await page.waitForTimeout(1500)
     check('결제 버튼 더블클릭해도 결제 요청 1회', payRequests === 1, `요청 ${payRequests}회`)
   }
+  // 같은 틱 두 번 클릭: dblclick(delay)은 사이에 리렌더가 끼어 disabled로 막히지만, 렌더 전 두 번째 클릭은 ref 가드만 막는다
+  await page.goto(`${BASE}/products/${target.id}`); await settle(page)
+  await page.getByRole('button', { name: '구매하기' }).click()
+  await page.waitForURL(/\/me/, { timeout: 5000 }).catch(() => {})
+  await settle(page)
+  const payBtn2 = page.getByRole('button', { name: '결제하기' }).first()
+  if (await payBtn2.isVisible().catch(() => false)) {
+    const before = payRequests
+    await payBtn2.evaluate(b => { b.click(); b.click() })
+    await page.waitForTimeout(1500)
+    check('결제 버튼 같은 틱 두 번 클릭해도 결제 요청 1회', payRequests - before === 1, `요청 ${payRequests - before}회`)
+  } else check('결제 버튼 같은 틱 두 번 클릭해도 결제 요청 1회', false, '결제 버튼 없음')
   check('사용자 흐름 중 콘솔 에러/5xx 0건', problems.length === 0, problems.join(' | '))
   await ctx.close()
 }
