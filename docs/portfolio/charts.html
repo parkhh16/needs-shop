@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>니즈샵 발표 그림</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&display=swap">
+<style>
+  :root {
+    --surface-1: #ffffff;
+    --surface-2: #f4f5f7;
+    --text-primary: #191919;
+    --text-secondary: #5f5f5f;
+    --grid: #e6e6e6;
+    --axis: #bdbdbd;
+    --series-1: #257de0;
+    --series-2: #f47230;
+    --ink: #16130f;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #ddd; font-family: 'Noto Sans KR', sans-serif; color: var(--text-primary); }
+  .fig { width: 1200px; height: 675px; background: var(--surface-1); padding: 40px 56px; margin: 0 0 20px; position: relative; }
+  h1 { font-size: 30px; font-weight: 800; margin: 0 0 6px; letter-spacing: -0.02em; }
+  .sub { font-size: 16px; color: var(--text-secondary); margin: 0 0 18px; }
+  .foot { position: absolute; left: 56px; bottom: 22px; font-size: 13px; color: var(--text-secondary); }
+  .legend { display: flex; gap: 20px; font-size: 15px; color: var(--text-primary); margin-bottom: 6px; }
+  .legend span { display: inline-flex; align-items: center; gap: 8px; }
+  .sw { width: 14px; height: 14px; border-radius: 3px; display: inline-block; }
+  svg text { font-family: 'Noto Sans KR', sans-serif; }
+</style>
+</head>
+<body>
+
+<!-- 1. 재고 전략 -->
+<section class="fig" id="fig-stock">
+  <h1>재고 차감 4가지 전략: 정확한 전략 중 원자적 UPDATE가 가장 빨랐다</h1>
+  <p class="sub">MySQL 8 · 재고 2,000 / 주문 2,000건 / 동시 100 · 같은 조건으로 2회 측정</p>
+  <div class="legend"><span><i class="sw" style="background:var(--series-1)"></i>1회 측정</span><span><i class="sw" style="background:var(--series-2)"></i>2회 측정</span></div>
+  <svg id="stock" width="1088" height="470"></svg>
+  <div class="foot">로컬 노트북, 서버 1대 기준이라 절대값보다 같은 조건의 상대 비교로 본다 · 출처: docs/issues/01-stock-concurrency.md</div>
+</section>
+
+<!-- 2. 검색 품질 -->
+<section class="fig" id="fig-search">
+  <h1>자연어 검색 품질: 39% → 92%, 처음 보는 질의로는 84%</h1>
+  <p class="sub">질의마다 정답 상품을 미리 정하고, 결과가 모두 정답인 질의의 비율 · 시드 상품 25개, 검색할 때 LLM을 부르지 않는 구조</p>
+  <svg id="search" width="1088" height="500"></svg>
+  <div class="foot">처음 보는 질의: 검색 코드와 기존 정답을 보지 않고 만들어 정답을 먼저 커밋한 32개 · 출처: docs/issues/11-ai-search.md</div>
+</section>
+
+<!-- 3. 서버 2대 구성 -->
+<section class="fig" id="fig-arch">
+  <h1>서버를 2대로 늘려도 재고와 돈이 어긋나지 않는 구성</h1>
+  <p class="sub">정합성은 DB가 지키고, 서버 메모리에 기대던 것만 고쳤다 · CI가 PR마다 이 구성을 띄워 스모크 테스트</p>
+  <svg id="arch" width="1088" height="470"></svg>
+  <div class="foot">Docker Compose: MySQL 8 · Redis 7 · 앱 2대 · Caddy · 출처: deploy/docker-compose.yml, docs/issues/13-scale-out.md</div>
+</section>
+
+<script>
+const NS = 'http://www.w3.org/2000/svg';
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+function el(parent, tag, attrs = {}, text) {
+  const e = document.createElementNS(NS, tag);
+  for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+  if (text != null) e.textContent = text;
+  parent.appendChild(e); return e;
+}
+// 끝만 둥근(4px) 가로 막대: 시작(기준선) 쪽은 각지게
+function hbar(svg, x, y, w, h, fill) {
+  const r = Math.min(4, w / 2, h / 2);
+  el(svg, 'path', { d: `M${x},${y} H${x + w - r} Q${x + w},${y} ${x + w},${y + r} V${y + h - r} Q${x + w},${y + h} ${x + w - r},${y + h} H${x} Z`, fill });
+}
+function vbar(svg, x, y, w, h, attrs) {
+  const r = Math.min(4, w / 2, h / 2), base = y + h;
+  return el(svg, 'path', Object.assign({ d: `M${x},${base} V${y + r} Q${x},${y} ${x + r},${y} H${x + w - r} Q${x + w},${y} ${x + w},${y + r} V${base} Z` }, attrs));
+}
+
+// ---------- 1. 재고 전략 ----------
+(() => {
+  const svg = document.getElementById('stock');
+  const rows = [
+    { name: '락 없음', note: '✕ 2,000개 팔고 재고는 74개만 감소', tps: [106, 137], p99: [3.8, 2.4] },
+    { name: '비관적 락', note: '✓ 정확', tps: [98, 126], p99: [3.2, 2.0] },
+    { name: '낙관적 락', note: '✓ 정확, 단 35%가 재고 있는데 실패', tps: [24, 32], p99: [14.0, 6.2] },
+    { name: '원자적 UPDATE', note: '✓ 정확 · 채택', tps: [110, 133], p99: [2.4, 1.9], pick: true },
+  ];
+  const labelW = 250, panelGap = 60, panelW = (1088 - labelW - panelGap) / 2;
+  const top = 40, rowH = 100, barH = 22, gap = 2;
+  const panels = [
+    { key: 'tps', title: '처리량 TPS (높을수록 좋음)', max: 160, ticks: [0, 40, 80, 120, 160], fmt: v => v, x0: labelW },
+    { key: 'p99', title: '응답 p99, 초 (낮을수록 좋음)', max: 16, ticks: [0, 4, 8, 12, 16], fmt: v => v.toFixed(1) + '초', x0: labelW + panelW + panelGap },
+  ];
+  for (const p of panels) {
+    el(svg, 'text', { x: p.x0, y: 18, 'font-size': 16, 'font-weight': 700, fill: css('--text-primary') }, p.title);
+    for (const t of p.ticks) {
+      const x = p.x0 + t / p.max * (panelW - 70);
+      el(svg, 'line', { x1: x, x2: x, y1: top - 6, y2: top + rows.length * rowH - 20, stroke: t === 0 ? css('--axis') : css('--grid'), 'stroke-width': 1 });
+      el(svg, 'text', { x, y: top + rows.length * rowH, 'font-size': 13, fill: css('--text-secondary'), 'text-anchor': 'middle' }, t);
+    }
+  }
+  rows.forEach((r, i) => {
+    const y = top + i * rowH + 14;
+    if (r.pick) el(svg, 'rect', { x: 0, y: y - 16, width: 1088, height: rowH - 18, rx: 10, fill: css('--surface-2') });
+    el(svg, 'text', { x: 12, y: y + 16, 'font-size': 19, 'font-weight': r.pick ? 800 : 700, fill: css('--text-primary') }, r.name);
+    el(svg, 'text', { x: 12, y: y + 42, 'font-size': 13.5, fill: css('--text-secondary') }, r.note);
+    for (const p of panels) {
+      r[p.key].forEach((v, k) => {
+        const by = y + k * (barH + gap);
+        const w = v / p.max * (panelW - 70);
+        hbar(svg, p.x0, by, w, barH, k === 0 ? css('--series-1') : css('--series-2'));
+        el(svg, 'text', { x: p.x0 + w + 8, y: by + barH - 5, 'font-size': 14, 'font-weight': 700, fill: css('--text-primary') }, p.fmt(v));
+      });
+    }
+  });
+})();
+
+// ---------- 2. 검색 품질 ----------
+(() => {
+  const svg = document.getElementById('search');
+  const defs = el(svg, 'defs');
+  const pat = el(defs, 'pattern', { id: 'hatch', width: 10, height: 10, patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(45)' });
+  el(pat, 'rect', { width: 10, height: 10, fill: '#dcebfb' });
+  el(pat, 'line', { x1: 0, y1: 0, x2: 0, y2: 10, stroke: css('--series-1'), 'stroke-width': 3 });
+
+  const bars = [
+    { label: '처음', sub: '28 / 72', pct: 39 },
+    { label: '검색 기본기 개선', sub: '63 / 72', pct: 88, delta: '+35개 · 규칙 코드', note: '띄어쓰기·조사·가격 표현·오타 교정' },
+    { label: 'AI 태그 추가', sub: '66 / 72', pct: 92, delta: '+3개 · AI 태그', note: '상품 등록 때 "가벼운", "fps" 같은 말' },
+    { label: '처음 보는 질의', sub: '27 / 32', pct: 84, held: true, note: '다른 질의 셋 · 정답을 먼저 커밋' },
+  ];
+  const left = 60, top = 60, plotH = 320, base = top + plotH, barW = 150;
+  const xs = [80, 330, 580, 880];
+  for (const t of [0, 25, 50, 75, 100]) {
+    const y = base - t / 100 * plotH;
+    el(svg, 'line', { x1: left, x2: 1080, y1: y, y2: y, stroke: t === 0 ? css('--axis') : css('--grid') });
+    el(svg, 'text', { x: left - 10, y: y + 5, 'font-size': 13, fill: css('--text-secondary'), 'text-anchor': 'end' }, t + '%');
+  }
+  // 같은 72개 셋과 다른 셋을 나누는 구분선
+  el(svg, 'line', { x1: 800, x2: 800, y1: top - 10, y2: base + 50, stroke: css('--axis'), 'stroke-dasharray': '4 5' });
+
+  bars.forEach((b, i) => {
+    const h = b.pct / 100 * plotH, x = xs[i] + left - 40, y = base - h;
+    vbar(svg, x, y, barW, h, b.held ? { fill: 'url(#hatch)', stroke: css('--series-1'), 'stroke-width': 2 } : { fill: css('--series-1') });
+    el(svg, 'text', { x: x + barW / 2, y: y - 30, 'font-size': 30, 'font-weight': 800, fill: css('--text-primary'), 'text-anchor': 'middle' }, b.pct + '%');
+    el(svg, 'text', { x: x + barW / 2, y: y - 10, 'font-size': 14, fill: css('--text-secondary'), 'text-anchor': 'middle' }, b.sub);
+    el(svg, 'text', { x: x + barW / 2, y: base + 26, 'font-size': 17, 'font-weight': 700, fill: css('--text-primary'), 'text-anchor': 'middle' }, b.label);
+    if (b.note) el(svg, 'text', { x: x + barW / 2, y: base + 48, 'font-size': 13, fill: css('--text-secondary'), 'text-anchor': 'middle' }, b.note);
+    if (b.delta) el(svg, 'text', { x: x + barW / 2, y: y + 30, 'font-size': 15, 'font-weight': 700, fill: '#ffffff', 'text-anchor': 'middle' }, b.delta);
+  });
+})();
+
+// ---------- 3. 서버 2대 구성 ----------
+(() => {
+  const svg = document.getElementById('arch');
+  const defs = el(svg, 'defs');
+  const m = el(defs, 'marker', { id: 'arr', viewBox: '0 0 10 10', refX: 9, refY: 5, markerWidth: 7, markerHeight: 7, orient: 'auto-start-reverse' });
+  el(m, 'path', { d: 'M0,0 L10,5 L0,10 z', fill: '#6b6b6b' });
+  const box = (x, y, w, h, title, lines, opt = {}) => {
+    el(svg, 'rect', { x, y, width: w, height: h, rx: 12, fill: opt.fill || css('--surface-1'), stroke: opt.stroke || '#c9c9c9', 'stroke-width': opt.sw || 1.5, 'stroke-dasharray': opt.dash || '' });
+    el(svg, 'text', { x: x + 16, y: y + 30, 'font-size': 18, 'font-weight': 800, fill: opt.fg || css('--text-primary') }, title);
+    lines.forEach((l, i) => el(svg, 'text', { x: x + 16, y: y + 56 + i * 22, 'font-size': 14, fill: opt.fg2 || css('--text-secondary') }, l));
+  };
+  const arrow = (x1, y1, x2, y2, label, opt = {}) => {
+    el(svg, 'line', { x1, y1, x2, y2, stroke: '#6b6b6b', 'stroke-width': 2, 'marker-end': 'url(#arr)', 'stroke-dasharray': opt.dash || '' });
+    if (label) el(svg, 'text', { x: (x1 + x2) / 2 + (opt.dx || 0), y: (y1 + y2) / 2 + (opt.dy || -8), 'font-size': 13, fill: css('--text-secondary'), 'text-anchor': 'middle' }, label);
+  };
+  // 왼쪽: 사용자 → Caddy
+  box(0, 170, 150, 110, '사용자', ['브라우저', 'React UI']);
+  box(200, 150, 190, 150, 'Caddy', ['HTTPS 인증서', '라운드 로빈', '헬스 체크로', '죽은 서버 제외']);
+  arrow(150, 225, 198, 225);
+  // 앱 2대
+  box(450, 20, 230, 140, '앱 서버 1', ['Spring Boot', '만료·대사 스케줄러는', '락을 얻은 서버만 실행'], { stroke: css('--ink'), sw: 2 });
+  box(450, 240, 230, 140, '앱 서버 2', ['같은 코드, 같은 설정', '서버 메모리에는', '캐시만 둔다'], { stroke: css('--ink'), sw: 2 });
+  arrow(390, 200, 448, 110);
+  arrow(390, 250, 448, 300);
+  // MySQL
+  box(760, 0, 328, 215, 'MySQL 8 (정합성은 여기서)', ['재고: UPDATE … WHERE stock >= ?', '주문 상태: 낙관적 락 @Version', '구매 제한: 사용자 행 락', '멱등 키: UNIQUE(user, key)', 'ShedLock: 스케줄러 한 서버만', '활동 로그: 300ms 배치 INSERT'], { fill: '#eef4fd', stroke: css('--series-1'), sw: 2 });
+  // Redis
+  box(760, 240, 328, 140, 'Redis 7 (서버 메모리 보조)', ['정지·탈퇴 캐시 무효화 Pub/Sub', '요청 한도 공유 카운터 (INCR)', '장애 시: 한도는 허용,', '캐시는 TTL 30초로 따라옴'], { fill: '#fff3ec', stroke: css('--series-2'), sw: 2 });
+  arrow(680, 80, 758, 80);
+  arrow(680, 290, 758, 170);
+  arrow(680, 120, 758, 280, '', { dash: '5 4' });
+  arrow(680, 340, 758, 340, '', { dash: '5 4' });
+  // PG
+  box(450, 405, 638, 52, '', [], { fill: css('--surface-2'), stroke: '#d6d6d6' });
+  el(svg, 'text', { x: 466, y: 437, 'font-size': 14, fill: css('--text-primary') }, '외부 결제(PG): 트랜잭션 밖에서 호출 · 타임아웃은 UNKNOWN → 대사 배치가 PG 조회로 확정');
+  arrow(565, 380, 565, 403);
+  // 범례
+  el(svg, 'line', { x1: 0, y1: 330, x2: 36, y2: 330, stroke: '#6b6b6b', 'stroke-width': 2 });
+  el(svg, 'text', { x: 44, y: 335, 'font-size': 13, fill: css('--text-secondary') }, '항상 사용');
+  el(svg, 'line', { x1: 0, y1: 356, x2: 36, y2: 356, stroke: '#6b6b6b', 'stroke-width': 2, 'stroke-dasharray': '5 4' });
+  el(svg, 'text', { x: 44, y: 361, 'font-size': 13, fill: css('--text-secondary') }, '서버 여러 대일 때만');
+})();
+</script>
+</body>
+</html>
