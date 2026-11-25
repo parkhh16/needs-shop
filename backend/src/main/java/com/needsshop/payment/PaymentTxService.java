@@ -35,6 +35,10 @@ public class PaymentTxService {
     public Prepared prepare(Long userId, Long orderId) {
         Order order = orderService.findMyOrder(userId, orderId);
         order.startPayment(LocalDateTime.now(clock));
+        // 상태 변경(@Version)을 결제 기록보다 먼저 DB에 보낸다. 같은 주문에 다른 Idempotency-Key로 결제가 동시에 오면
+        // 늦은 쪽은 여기서 낙관적 락 충돌(409)로 끝난다. 미루면 둘 다 같은 결제 키(-P1)를 만들어 INSERT하다가
+        // 유니크 제약 위반으로 500이 된다 (돈은 유니크 제약이 지키지만 사용자에게는 서버 오류로 보임)
+        orderRepository.saveAndFlush(order);
 
         long attempt = paymentRepository.countByOrderId(orderId) + 1;
         String paymentKey = order.getOrderNo() + "-P" + attempt;
