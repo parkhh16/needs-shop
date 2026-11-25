@@ -23,10 +23,20 @@
 | 07 모바일 상세 수량 행 | 사진 4:3 | [relay-n4/before/detail-qty.mobile.light.png](relay-n4/before/detail-qty.mobile.light.png) | [relay-n4/after/detail-qty.mobile.light.png](relay-n4/after/detail-qty.mobile.light.png) | 수량 행이 구매 바 뒤(y 813)에서 바 위(y 716)로 (다크도 같은 폴더) |
 | 07 로그인 포커스링 | 이중 테두리 제거 | [relay-n4/before/login-focus.mobile.light.png](relay-n4/before/login-focus.mobile.light.png) | [relay-n4/after/login-focus.mobile.light.png](relay-n4/after/login-focus.mobile.light.png) | 이중 링이 단일 링으로 |
 
-## 이전 라운드
+## 처음부터 최종까지 (대표 4장)
 
-- 1라운드: [r1-before](r1-before/) → [r1-after](r1-after/) (56장)
-- 2라운드: [r2-after](r2-after/)
+라운드마다 같은 화면을 같은 도구로 찍은 것 중 대표 4장만 남겼다(가로 800px 이하). 라운드별 48~56장 전체는 git 기록에 있다([history.md](../history.md) "원문 위치").
+
+| 화면 | 처음 (1라운드 전) | 1라운드 후 (토큰·대비) | 2라운드 후 (갤러리 구조) | 최종 (릴레이 후) |
+|---|---|---|---|---|
+| 홈 PC 라이트 | [보기](r1-before/shop.pc.light.png) | [보기](r1-after/shop.pc.light.png) | [보기](r2-after/shop.pc.light.png) | [보기](final/shop.pc.light.png) |
+| 홈 모바일 다크 | [보기](r1-before/shop.mobile.dark.png) | [보기](r1-after/shop.mobile.dark.png) | [보기](r2-after/shop.mobile.dark.png) | [보기](final/shop.mobile.dark.png) |
+| 상세 PC 라이트 | [보기](r1-before/product.pc.light.png) | [보기](r1-after/product.pc.light.png) | [보기](r2-after/product.pc.light.png) | [보기](final/product.pc.light.png) |
+| 상세 모바일 다크 | [보기](r1-before/product.mobile.dark.png) | [보기](r1-after/product.mobile.dark.png) | [보기](r2-after/product.mobile.dark.png) | [보기](final/product.mobile.dark.png) |
+
+## 다음 라운드 기준선
+
+- [r4-before](r4-before/): 2026-11-25 점검. 계정 설정, 관리자 표 모바일 등 아직 다루지 않은 화면 ([backlog.md](../backlog.md))
 
 ## 보이는 변화가 없는 회차
 

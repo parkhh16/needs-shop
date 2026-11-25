@@ -177,108 +177,51 @@ axe 건수와 맞춰 보면, product(라이트) 6건 = 헤더 회원가입 1 + �
 - 터치 목표: 모바일에서 버튼, 링크 메뉴, 아이콘 버튼은 최소 40x40px(주요 버튼 `.buy`, `.auth-submit`은 높이 48px).
 - 모션: 기존 `.2s`, 스켈레톤 shimmer 유지. `prefers-reduced-motion`이면 전부 정지.
 
-## 8. 붙여넣기용 CSS (index.css 상단 교체)
+## 8. 실제 값의 위치
 
-```css
-:root {
-  /* 면 */
-  --bg: #f6f7f9;
-  --surface: #ffffff;
-  --surface-2: #f0f2f5;
-  --border: #e2e5ea;
-  --border-strong: #838b99;
-  /* 글자 */
-  --text: #1a1d23;
-  --muted: #596273;
-  /* 강조 */
-  --accent: #c2410c;
-  --accent-hover: #9a3412;
-  --on-accent: #ffffff;
-  --accent-text: #9a3412;
-  --accent-weak: #fff1e8;
-  --focus: var(--accent);
-  /* 비활성 / 단색 칩 */
-  --disabled-bg: #e4e7ec;
-  --disabled-fg: #5f6878;
-  --on-solid: #ffffff;
-  --soldout-bg: #3f4650;
-  /* 상태 */
-  --good: #1b6e31;  --good-weak: #e6f6ea;
-  --warn: #8a4b00;  --warn-weak: #fff1d6;
-  --bad:  #b42318;  --bad-weak:  #fdecea;
-  --info: #15578f;  --info-weak: #e3f1fb;
-  --unc:  #5b3fb5;  --unc-weak:  #efeafc;   /* 확정 전: PAYING, UNKNOWN */
-  --neutral: #4b5563; --neutral-weak: #e9ecf0;
-  /* 간격 */
-  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
-  --space-5: 24px; --space-6: 32px; --space-7: 48px;
-  /* 글자 */
-  --fs-xs: 12px; --fs-sm: 13px; --fs-md: 14px; --fs-base: 16px;
-  --fs-lg: 18px; --fs-xl: 22px; --fs-2xl: 26px;
-  --fw-regular: 400; --fw-medium: 500; --fw-semibold: 600; --fw-bold: 700; --fw-black: 800;
-  /* 모서리 / 그림자 */
-  --radius-sm: 6px; --radius: 10px; --radius-lg: 14px; --radius-pill: 99px;
-  --shadow-1: 0 1px 2px rgb(0 0 0 / .08);
-  --shadow-2: 0 8px 24px rgb(0 0 0 / .12);
-  /* 레이아웃 (기존) */
-  --header-h: 64px;
-  --sidebar-w: 232px;
-  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
-  color: var(--text);
-  background: var(--bg);
-  line-height: 1.5;
-  color-scheme: light dark;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #111317;
-    --surface: #1a1d23;
-    --surface-2: #242932;
-    --border: #2e333d;
-    --border-strong: #6b7280;
-    --text: #e8eaed;
-    --muted: #a0a8b5;
-    --accent: #ff8a3d;
-    --accent-hover: #ffa05c;
-    --on-accent: #111317;
-    --accent-text: #ffa05c;
-    --accent-weak: #3a2414;
-    --disabled-bg: #2a2f39;
-    --disabled-fg: #98a1af;
-    --soldout-bg: #4a525c;
-    --good: #69db7c;  --good-weak: #16301c;
-    --warn: #ffc078;  --warn-weak: #3a2a12;
-    --bad:  #ff8787;  --bad-weak:  #3b1a1a;
-    --info: #74c0fc;  --info-weak: #13283b;
-    --unc:  #c4b5fd;  --unc-weak:  #2a2250;
-    --neutral: #a0a8b5; --neutral-weak: #2a2f39;
-    --shadow-1: 0 1px 2px rgb(0 0 0 / .5);
-    --shadow-2: 0 8px 24px rgb(0 0 0 / .55);
-  }
-}
-```
-
-`color-scheme: light dark`는 스크롤바, 체크박스, `select` 기본 모양을 OS 설정에 맞추기 위해 추가한다(현재 다크에서 흰 체크박스가 그대로 보인다).
-
-## 9. 기존 코드에서 값을 바꿔야 하는 곳 (구현자용 체크리스트)
-
-| 위치 | 현재 | 바꿀 것 |
-|---|---|---|
-| `button` 기본 (`index.css`) | `color: #fff` | `color: var(--on-accent)`, hover `background: var(--accent-hover)` |
-| `.header-nav a.header-cta` (`admin.css`) | `color: #fff` | `color: var(--on-accent)`, hover는 `opacity` 대신 `--accent-hover` |
-| `.auth-alt a`, `.corrected a`, `.chip.static`, `.chip.removable`, `.role.role-admin`, `.account-menu button.current`, `.link`, `.s-demand-new` | `color: var(--accent)` | `color: var(--accent-text)` |
-| `.discount` | `var(--bad)` | `var(--accent-text)` |
-| `.badge.soldout` | `#495057` / `#fff` | `var(--soldout-bg)` / `var(--on-solid)` |
-| `.side-item.empty` | `opacity: .5` | `color: var(--muted)` (opacity 제거) |
-| `button:disabled` | `opacity: .45` | 위 7번 비활성 규칙 |
-| `.toast` | `#212529` / `#fff` 하드코딩 | 그대로 둬도 대비 15.2:1로 통과. 다음 라운드에서 토큰화 |
-| `.s-paying` | `--warn` | `--unc` (확정 전) |
-| `.search-field` 테두리 | `2px solid var(--text)` | `1px solid var(--border-strong)`, `:focus-within`은 `2px solid var(--accent)` |
+1라운드 때 이 자리에 `index.css` 상단에 붙여 넣을 CSS 전체와 구현 체크리스트가 있었다. 모두 반영됐으므로 지웠다(원문: `git show 34421f2:docs/design/tokens.md`). **지금 값의 기준은 `frontend/src/index.css`**이고, 이 문서는 이름 규칙, 쓰임새, 대비 근거를 남긴다. 2라운드에서 바뀐 값은 11장에 있다.
 
 ## 10. 다음 라운드로 넘기는 영향 (이번에 화면을 고치지 않지만 알아둘 것)
 
 - 관리자 화면(`admin.css`): `--accent`가 글자색으로 쓰이는 곳(`.link`, `.admin-tabs a.active` 테두리, `.s-demand-new`, `.bar-fill`)이 많다. 라이트에서 `--accent`가 `#c2410c`가 되어 대비는 모두 올라가지만(`.s-demand-new`는 `#c2410c` / `#fff1e8` = 4.69), 여유가 적으므로 글자에는 `--accent-text`로 바꾼다.
 - 내 주문(`/me`)의 `.status`: `.s-paying`이 보라 계열로 바뀐다. 결제 확인 중 주문이 호박색에서 보라색으로 바뀌는 것이므로, 안내 문구("결제 결과를 확인하고 있어요")와 같이 확인한다.
 - `.u-active`, `.u-locked`, `.c2/.c4/.c5`처럼 good/warn/bad를 쓰는 배지는 값만 바뀌며 대비는 모두 올라간다(good 4.07→5.64, warn 4.33→6.09).
-- 다크 모드 수동 토글, 토스트 토큰화, 관리자 표의 모바일 레이아웃은 다음 라운드.
+- 다크 모드 수동 토글, 토스트 토큰화, 관리자 표의 모바일 레이아웃은 다음 라운드. → [backlog.md](backlog.md)
+
+## 11. 2라운드에서 바뀐 것 (방향: "수량이 정해진 물건을 고르는 갤러리")
+
+1라운드 토큰 이름은 모두 유지하고 값만 바꾸거나 새 이름을 더했다. 상태 색(`--good*`, `--warn*`, `--bad*`, `--info*`, `--unc*`)은 라운드 사이에 바꾸지 않는다. 값은 `index.css`에 있고, 여기에는 규칙과 근거만 둔다.
+
+- **바탕**: 차가운 회색 → 따뜻한 종이(라이트 `--bg #faf8f5`) / 먹색(다크 `--bg #0f0e0c`). 다크 `--on-accent`는 `#0f0e0c`.
+- **새 이름**: 히어로(`--hero-bg`, `--hero-fg`, `--hero-muted`, `--hero-accent`, `--hero-chip`), 품절 오버레이(`--scrim`, `--on-scrim`), 모양(`--radius-xl` 20px), 글자(`--fs-3xl` 32px, `--fs-hero` `clamp(28px, 5.2vw, 44px)`, `--ls-tight`, `--ls-hero`), 그림자(`--shadow-lift`, `--shadow-bar`), 모션(`--ease`, `--dur-1` .15s, `--dur-2` .25s), 모바일 높이(`--header-row` 56px, `--search-row` 52px, `--bar-h` 72px).
+- **모서리**: `--radius-sm` 8px, `--radius` 12px, `--radius-lg` 16px(카드 이미지), `--radius-xl` 20px(구매 패널, 로그인 카드, 히어로).
+- **주황(`--accent`)은 두 가지에만**: 행동(구매, 검색)과 한정·할인 신호(할인율, 남은 수량 칩).
+- **그림자**: 평소에는 없고 hover(포인터 기기만), 모바일 하단 구매 바, 메뉴에서만.
+- **아이콘**: 인라인 SVG, 24x24, `stroke="currentColor"`, 선 1.75, `aria-hidden="true"`. 이모지와 아이콘 라이브러리를 쓰지 않는다. 외부 폰트·이미지·CDN 없음.
+- **모션**: 카드 hover 이미지 1.04배(`@media (hover: hover)`), 누르면 0.98배, 스켈레톤은 실제 카드와 같은 치수. 점멸, 펄스, 카운트다운 애니메이션, 반복 흔들림 금지. `prefers-reduced-motion`이면 전부 정지.
+- **히어로 글로우**: `radial-gradient`의 accent 불투명도는 최대 30%. 넘기면 아래 표의 최악 점이 깨진다.
+
+### 2라운드 대비 계산 (python, WCAG 상대 휘도, 가장 낮은 쌍 기준)
+
+| 글자 / 요소 | 배경 | 라이트 | 다크 | 기준 |
+|---|---|---|---|---|
+| `--text` | `--bg` | 17.47 | 16.41 | 4.5 |
+| `--text` | `--surface-2` | 16.02 | 13.95 | 4.5 |
+| `--muted` | `--bg` | 6.94 | 7.58 | 4.5 |
+| `--muted` | `--surface` | 7.35 | 7.09 | 4.5 |
+| `--muted` | `--surface-2` | 6.36 | 6.44 | 4.5 |
+| `--accent-text` | `--bg` | 6.89 | 9.59 | 4.5 |
+| `--accent-text` | `--accent-weak` | 6.55 | 7.23 | 4.5 |
+| `--on-accent` | `--accent` | 5.18 | 8.23 | 4.5 |
+| `--hero-fg` | `--hero-bg` | 16.85 | 15.58 | 4.5 |
+| `--hero-muted` | `--hero-bg` | 10.64 | 10.22 | 4.5 |
+| `--hero-accent` | `--hero-bg` | 10.19 | 9.43 | 4.5 |
+| `--hero-fg` | 히어로 글로우 최밝은 점(accent 30% 혼합: `#5f391f` / `#6a3c1e`) | 9.41 | 8.64 | 4.5 |
+| `--hero-muted` | 같은 글로우 점 | 5.94 | 5.67 | 4.5 |
+| `--hero-accent` | 같은 글로우 점 | 5.69 | 5.22 | 4.5 |
+| `--hero-fg` | `--hero-chip` 위(`#35322e`) | 11.95 | - | 4.5 |
+| `--on-scrim` | `--scrim`을 흰 사진 위에 올린 최악의 경우(`#575552`) | 7.43 | 7.43 | 4.5 |
+| `--warn` | `--warn-weak` (재고 칩) | 6.09 | 8.60 | 4.5 |
+| `--border-strong` | `--bg` / `--surface` | 3.58 / 3.79 | 4.24 / 3.97 | 3 (비텍스트) |
+
+히어로 글로우는 `radial-gradient`의 accent 불투명도를 **최대 30%**로 제한한다. 이를 넘기면 위 표의 최악 점이 깨진다.

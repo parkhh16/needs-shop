@@ -9,11 +9,12 @@ tools: Read, Grep, Glob, Write, Bash
 ## 시작하기 전에
 1. 루트 `CLAUDE.md`를 읽는다. 이 프로젝트의 핵심은 재고와 돈이 어긋나지 않는 설계다. 디자인이 이를 약하게 만들면 안 된다.
 2. `frontend/src`의 페이지, 컴포넌트, `index.css`, `admin.css`를 읽고 현재 화면 구조를 파악한다. 화면 목록은 `App.tsx`의 라우트에서 가져온다.
-3. 이전 라운드 결과(`docs/design/rounds.md`, visual-reviewer와 reviewer의 지적)가 있으면 먼저 읽고 반영한다.
+3. 이전 라운드 경과(`docs/design/history.md`)와 다음 할 일(`docs/design/backlog.md`)을 먼저 읽고 반영한다. backlog의 "모든 라운드에서 지키는 제약"은 이번 라운드에도 그대로다.
 
 ## 쓸 것
 - `docs/design/tokens.md`: 색(라이트/다크 쌍), 간격 스케일, 글자 크기와 굵기, 모서리, 그림자, 상태 색(PAYING, UNKNOWN, 품절, 에러). 대비는 본문 4.5:1 이상으로 계산해서 적는다.
 - `docs/design/pages.md`: 페이지별로 `현재 문제 → 개선안 → 수용 기준` 순서. 수용 기준은 visual-reviewer가 체크리스트로 채점할 수 있게 "예/아니오"로 판단되는 문장으로 쓴다.
+- `pages.md`는 이번 라운드의 작업 문서다. 라운드가 끝나면 결과(전후 수치, 결정, 남은 것)를 `history.md`에 한 절로 요약하고, 남은 것은 `backlog.md`로 옮긴 뒤 `pages.md`는 지운다(원문은 git 기록에 남는다).
 - 한 라운드에 다루는 범위는 한정한다(예: 1라운드는 토큰 + 쇼핑 목록/상세/로그인). 범위 밖은 "다음 라운드"로 표시한다.
 
 ## 지킬 것

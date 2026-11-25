@@ -1,8 +1,10 @@
 package com.needsshop.idempotency;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.needsshop.mockpg.ChaosSettings;
 import com.needsshop.product.Product;
 import com.needsshop.support.TestFixtures;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -28,13 +30,20 @@ class OrderApiTest {
 
     @Autowired TestRestTemplate rest;
     @Autowired TestFixtures fixtures;
+    @Autowired ChaosSettings chaos;
 
     private Product product;
 
     @BeforeEach
     void setUp() {
         fixtures.clean();
+        chaos.set(new ChaosSettings.Snapshot(0, 0, 0, 0, false)); // 다른 테스트가 남긴 PG 장애 설정에 기대지 않는다
         product = fixtures.product(100);
+    }
+
+    @AfterEach
+    void tearDown() {
+        chaos.reset();
     }
 
     @Test
@@ -93,6 +102,42 @@ class OrderApiTest {
     }
 
     @Test
+    @DisplayName("결제 따닥: 같은 주문에 서로 다른 키로 결제 10건이 동시에 와도 승인은 1건, 나머지는 409")
+    void payDoubleClickWithDifferentKeys() throws Exception {
+        // 화면 버튼 가드가 뚫려 클릭마다 새 키로 결제 요청이 나가는 경우. 멱등 키로는 같은 요청인지 알 수 없으므로
+        // 주문 상태 전이(PENDING_PAYMENT → PAYING은 한 번만)와 @Version, 결제 키 유니크 제약이 막아야 한다
+        String token = signup();
+        long orderId = order(token, UUID.randomUUID().toString(), product.getId(), 1).getBody().get("id").asLong();
+
+        int n = 10;
+        ExecutorService pool = Executors.newFixedThreadPool(n);
+        CountDownLatch start = new CountDownLatch(1);
+        List<Future<ResponseEntity<JsonNode>>> futures = new ArrayList<>();
+        for (int i = 0; i < n; i++) {
+            futures.add(pool.submit(() -> {
+                start.await();
+                return pay(token, UUID.randomUUID().toString(), orderId);
+            }));
+        }
+        start.countDown();
+        List<ResponseEntity<JsonNode>> responses = new ArrayList<>();
+        for (var f : futures) responses.add(f.get());
+        pool.shutdown();
+
+        List<HttpStatusCode> statuses = responses.stream().map(ResponseEntity::getStatusCode).toList();
+        assertThat(statuses).as("응답 코드").filteredOn(s -> s == HttpStatus.OK).hasSize(1);
+        List<ResponseEntity<JsonNode>> rejected = responses.stream().filter(r -> r.getStatusCode() != HttpStatus.OK).toList();
+        assertThat(rejected).as("나머지는 사용자에게 500이 아니라 409, 주문 상태 충돌(O002)").allSatisfy(r -> {
+            assertThat(r.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+            assertThat(r.getBody().get("code").asText()).isEqualTo("O002");
+        });
+        assertThat(fixtures.paymentCount(orderId)).as("PG를 부르기 전에 남기는 결제 시도 기록").isEqualTo(1);
+        assertThat(fixtures.paymentCount(orderId, "APPROVED")).as("승인된 결제").isEqualTo(1);
+        assertThat(fixtures.orderStatus(orderId)).isEqualTo("PAID");
+        assertThat(fixtures.stockOf(product.getId())).isEqualTo(99);
+    }
+
+    @Test
     @DisplayName("Idempotency-Key가 없으면 400")
     void missingKey() {
         String token = signup();
@@ -132,6 +177,12 @@ class OrderApiTest {
         HttpHeaders headers = auth(token);
         headers.set("Idempotency-Key", key);
         return rest.exchange("/api/orders", HttpMethod.POST, new HttpEntity<>(body(productId, qty), headers), JsonNode.class);
+    }
+
+    private ResponseEntity<JsonNode> pay(String token, String key, long orderId) {
+        HttpHeaders headers = auth(token);
+        headers.set("Idempotency-Key", key);
+        return rest.exchange("/api/orders/" + orderId + "/payment", HttpMethod.POST, new HttpEntity<>(headers), JsonNode.class);
     }
 
     private Map<String, Object> body(Long productId, int qty) {

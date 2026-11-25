@@ -33,6 +33,18 @@ public class TestFixtures {
         return jdbc.queryForObject("select count(*) from " + table, Integer.class);
     }
 
+    public int paymentCount(long orderId) {
+        return jdbc.queryForObject("select count(*) from payment where order_id = ?", Integer.class, orderId);
+    }
+
+    public int paymentCount(long orderId, String status) {
+        return jdbc.queryForObject("select count(*) from payment where order_id = ? and status = ?", Integer.class, orderId, status);
+    }
+
+    public String orderStatus(long orderId) {
+        return jdbc.queryForObject("select status from orders where id = ?", String.class, orderId);
+    }
+
     public void clean() {
         jdbc.execute("delete from payment");
         jdbc.execute("delete from order_item");
