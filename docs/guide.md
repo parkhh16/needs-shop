@@ -56,7 +56,7 @@ npm run dev
 
 ```bash
 cd backend
-./gradlew test                                          # 전체 135개, H2 (약 3분)
+./gradlew test                                          # 전체 165개, H2 (2026-11-26 측정 1분 11초)
 DB_PASSWORD=<비밀번호> ./gradlew test -Pdb=mysql         # 같은 테스트를 설치된 MySQL의 needs_shop_test 스키마에서
 ./gradlew test -Pdb=testcontainers                      # 같은 테스트를 Docker로 띄운 MySQL 8.0에서 (Docker 필요, CI와 같음)
 
