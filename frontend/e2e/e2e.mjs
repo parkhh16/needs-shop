@@ -82,6 +82,55 @@ if (!target) throw new Error('주문 가능한 상품이 없다')
   await ctx.close()
 }
 
+// 2-b) 응답이 끊긴 뒤 다시 누르면 같은 Idempotency-Key를 보내 서버가 첫 결과를 돌려준다
+{
+  const ctx = await browser.newContext({ viewport: VIEWPORTS.pc })
+  const page = await ctx.newPage()
+  await login(page, 'user')
+  const ORDERS = /\/api\/orders\/?(\?|$)/
+  const PAY = /\/api\/orders\/\d+\/payment/
+
+  // 주문: 서버는 처리했지만 응답이 유실된 경우 (route.fetch로 서버에 보낸 뒤 연결을 끊는다)
+  const orderKeys = []; let firstOrderId = null
+  await page.route(ORDERS, async route => {
+    const req = route.request()
+    if (req.method() !== 'POST') return route.continue()
+    orderKeys.push(req.headers()['idempotency-key'])
+    if (orderKeys.length > 1) return route.continue()
+    const res = await route.fetch()
+    firstOrderId = (await res.json().catch(() => null))?.id ?? null
+    return route.abort('connectionreset')
+  })
+  await page.goto(`${BASE}/products/${target.id}`); await settle(page)
+  const buy = page.getByRole('button', { name: '구매하기' })
+  await buy.click(); await page.waitForTimeout(1000)
+  const replay = page.waitForResponse(r => r.request().method() === 'POST' && ORDERS.test(r.url()), { timeout: 5000 }).catch(() => null)
+  await buy.click()
+  const res = await replay
+  const body = res ? await res.json().catch(() => null) : null
+  check('주문 응답 유실 후 재시도: 같은 Idempotency-Key', orderKeys.length === 2 && orderKeys[0] === orderKeys[1], `요청 ${orderKeys.length}회, 키 ${orderKeys[0] === orderKeys[1] ? '같음' : '다름'}`)
+  check('주문 응답 유실 후 재시도: 서버가 첫 주문을 돌려줌(새 주문 없음)', res?.headers()['idempotent-replayed'] === 'true' && firstOrderId !== null && body?.id === firstOrderId,
+    `replayed=${res?.headers()['idempotent-replayed']}, 첫 주문 ${firstOrderId}, 재시도 응답 ${body?.id}`)
+  await page.unroute(ORDERS)
+
+  // 결제: 요청이 서버에 닿기 전에 끊긴 경우. 다시 누르면 같은 키로 결제된다
+  await page.waitForURL(/\/me/, { timeout: 5000 }).catch(() => {})
+  await settle(page)
+  const payKeys = []
+  await page.route(PAY, route => {
+    payKeys.push(route.request().headers()['idempotency-key'])
+    return payKeys.length === 1 ? route.abort('connectionreset') : route.continue()
+  })
+  const payBtn = page.getByRole('button', { name: '결제하기' }).first()
+  await payBtn.click(); await page.waitForTimeout(1500)
+  const paid = page.waitForResponse(r => PAY.test(r.url()), { timeout: 5000 }).catch(() => null)
+  await page.getByRole('button', { name: '결제하기' }).first().click()
+  const payRes = await paid
+  check('결제 응답 유실 후 재시도: 같은 Idempotency-Key', payKeys.length === 2 && payKeys[0] === payKeys[1], `요청 ${payKeys.length}회, 키 ${payKeys[0] === payKeys[1] ? '같음' : '다름'}`)
+  check('결제 응답 유실 후 재시도: 결제 성공', payRes?.status() === 200, `status ${payRes?.status()}`)
+  await ctx.close()
+}
+
 // 3-a) 모바일 상세: 구매 버튼은 DOM에 1개, 빠르게 두 번 눌러도 POST /api/orders 1회
 {
   const ctx = await browser.newContext({ viewport: VIEWPORTS.mobile })

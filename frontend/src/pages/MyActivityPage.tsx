@@ -6,6 +6,7 @@ import { BoxIcon } from '../components/icons'
 import { useApp } from '../context/AppContext'
 import { remaining, won } from '../format'
 import { useNow } from '../hooks'
+import { IdempotencyKeys } from '../idempotency'
 
 const STATUS_LABEL: Record<OrderStatus, string> = {
   PENDING_PAYMENT: '결제 대기',
@@ -27,6 +28,7 @@ export function MyActivityPage() {
   const [activity, setActivity] = useState<MyActivity | null>(null)
   const [paying, setPaying] = useState<number | null>(null)
   const inFlight = useRef(false)
+  const payKeys = useRef(new IdempotencyKeys())
 
   const loadOrders = () => api.myOrders().then(r => setOrders(r.data.content)).catch(e => { fail(e); setOrders([]) })
 
@@ -46,16 +48,20 @@ export function MyActivityPage() {
   if (!session) return <Navigate to="/" replace />
 
   /**
-   * 한 번의 클릭 = 멱등 키 하나. paying 상태만으로는 리렌더 전 같은 틱의 두 번째 클릭이 새 키로 통과하므로 ref로도 막는다.
+   * 한 번의 요청 = 멱등 키 하나(결과를 모르는 실패 뒤 재시도는 같은 키). paying 상태만으로는 리렌더 전 같은 틱의 두 번째 클릭이 새 키로 통과하므로 ref로도 막는다.
    */
   const pay = async (o: Order) => {
     if (inFlight.current) return
     inFlight.current = true
     setPaying(o.id)
+    // 응답이 끊겨 결과를 모르면 같은 주문을 다시 결제할 때 같은 키를 보내 서버가 첫 결과를 돌려주게 한다
+    const scope = `${session.userId}:${o.id}`
     try {
-      const { status, data } = await api.pay(o.id, crypto.randomUUID())
+      const { status, data } = await api.pay(o.id, payKeys.current.get(scope))
+      payKeys.current.settle(scope)
       toast(data.message, status === 200 ? 'success' : 'info')
     } catch (e) {
+      payKeys.current.settle(scope, e)
       fail(e)
     } finally {
       // 재조회 전에 풀면 PAYING/PAID가 된 주문에 "결제하기"가 잠깐 활성으로 남으므로 목록을 다시 받은 뒤 푼다 (loadOrders는 항상 resolve)
