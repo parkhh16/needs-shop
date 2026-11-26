@@ -42,6 +42,18 @@ if (!target) throw new Error('주문 가능한 상품이 없다')
     await page.waitForTimeout(1500)
     check('결제 버튼 더블클릭해도 결제 요청 1회', payRequests === 1, `요청 ${payRequests}회`)
   }
+  // 같은 틱 두 번 클릭: dblclick(delay)은 사이에 리렌더가 끼어 disabled로 막히지만, 렌더 전 두 번째 클릭은 ref 가드만 막는다
+  await page.goto(`${BASE}/products/${target.id}`); await settle(page)
+  await page.getByRole('button', { name: '구매하기' }).click()
+  await page.waitForURL(/\/me/, { timeout: 5000 }).catch(() => {})
+  await settle(page)
+  const payBtn2 = page.getByRole('button', { name: '결제하기' }).first()
+  if (await payBtn2.isVisible().catch(() => false)) {
+    const before = payRequests
+    await payBtn2.evaluate(b => { b.click(); b.click() })
+    await page.waitForTimeout(1500)
+    check('결제 버튼 같은 틱 두 번 클릭해도 결제 요청 1회', payRequests - before === 1, `요청 ${payRequests - before}회`)
+  } else check('결제 버튼 같은 틱 두 번 클릭해도 결제 요청 1회', false, '결제 버튼 없음')
   check('사용자 흐름 중 콘솔 에러/5xx 0건', problems.length === 0, problems.join(' | '))
   await ctx.close()
 }
@@ -67,6 +79,55 @@ if (!target) throw new Error('주문 가능한 상품이 없다')
   await login(page, 'user')
   await page.goto(`${BASE}/admin`); await settle(page)
   check('일반 회원은 /admin 진입 불가', !page.url().endsWith('/admin') || (await page.getByText('대시보드').count()) === 0, page.url())
+  await ctx.close()
+}
+
+// 2-b) 응답이 끊긴 뒤 다시 누르면 같은 Idempotency-Key를 보내 서버가 첫 결과를 돌려준다
+{
+  const ctx = await browser.newContext({ viewport: VIEWPORTS.pc })
+  const page = await ctx.newPage()
+  await login(page, 'user')
+  const ORDERS = /\/api\/orders\/?(\?|$)/
+  const PAY = /\/api\/orders\/\d+\/payment/
+
+  // 주문: 서버는 처리했지만 응답이 유실된 경우 (route.fetch로 서버에 보낸 뒤 연결을 끊는다)
+  const orderKeys = []; let firstOrderId = null
+  await page.route(ORDERS, async route => {
+    const req = route.request()
+    if (req.method() !== 'POST') return route.continue()
+    orderKeys.push(req.headers()['idempotency-key'])
+    if (orderKeys.length > 1) return route.continue()
+    const res = await route.fetch()
+    firstOrderId = (await res.json().catch(() => null))?.id ?? null
+    return route.abort('connectionreset')
+  })
+  await page.goto(`${BASE}/products/${target.id}`); await settle(page)
+  const buy = page.getByRole('button', { name: '구매하기' })
+  await buy.click(); await page.waitForTimeout(1000)
+  const replay = page.waitForResponse(r => r.request().method() === 'POST' && ORDERS.test(r.url()), { timeout: 5000 }).catch(() => null)
+  await buy.click()
+  const res = await replay
+  const body = res ? await res.json().catch(() => null) : null
+  check('주문 응답 유실 후 재시도: 같은 Idempotency-Key', orderKeys.length === 2 && orderKeys[0] === orderKeys[1], `요청 ${orderKeys.length}회, 키 ${orderKeys[0] === orderKeys[1] ? '같음' : '다름'}`)
+  check('주문 응답 유실 후 재시도: 서버가 첫 주문을 돌려줌(새 주문 없음)', res?.headers()['idempotent-replayed'] === 'true' && firstOrderId !== null && body?.id === firstOrderId,
+    `replayed=${res?.headers()['idempotent-replayed']}, 첫 주문 ${firstOrderId}, 재시도 응답 ${body?.id}`)
+  await page.unroute(ORDERS)
+
+  // 결제: 요청이 서버에 닿기 전에 끊긴 경우. 다시 누르면 같은 키로 결제된다
+  await page.waitForURL(/\/me/, { timeout: 5000 }).catch(() => {})
+  await settle(page)
+  const payKeys = []
+  await page.route(PAY, route => {
+    payKeys.push(route.request().headers()['idempotency-key'])
+    return payKeys.length === 1 ? route.abort('connectionreset') : route.continue()
+  })
+  const payBtn = page.getByRole('button', { name: '결제하기' }).first()
+  await payBtn.click(); await page.waitForTimeout(1500)
+  const paid = page.waitForResponse(r => PAY.test(r.url()), { timeout: 5000 }).catch(() => null)
+  await page.getByRole('button', { name: '결제하기' }).first().click()
+  const payRes = await paid
+  check('결제 응답 유실 후 재시도: 같은 Idempotency-Key', payKeys.length === 2 && payKeys[0] === payKeys[1], `요청 ${payKeys.length}회, 키 ${payKeys[0] === payKeys[1] ? '같음' : '다름'}`)
+  check('결제 응답 유실 후 재시도: 결제 성공', payRes?.status() === 200, `status ${payRes?.status()}`)
   await ctx.close()
 }
 

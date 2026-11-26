@@ -70,17 +70,31 @@ After에서는 결제 기록 1건, 승인 1건, 주문 PAID, 재고 1개 차감�
 
 **H2와 MySQL의 Before가 다른 이유**: MySQL은 두 번째 INSERT가 첫 트랜잭션의 잠금을 기다리는 동안 일부 요청이 이미 바뀐 주문(PAYING)을 읽어 상태 전이 오류(409)로 끝났습니다. H2만 봤다면 "MySQL에서는 덜 터진다"를, MySQL만 봤다면 "운이 나쁘면 모두 터진다"를 놓쳤을 것입니다. 같은 테스트를 두 DB에서 돌리는 이유입니다.
 
-### 아직 남은 것
+### 화면: 응답이 끊긴 뒤 다시 누르면 같은 키 (2026-11-26)
 
-- 화면의 결제하기 버튼 가드(`useRef`)와 실패 시 멱등 키 재사용. 서버는 이제 409로 막고, 화면은 서버 메시지("다른 요청에 의해 상태가 변경되었습니다. 다시 확인해주세요.")를 오류 알림으로 띄운다(`AppContext.fail`). 수정 전에는 같은 자리에 서버 오류가 떴다. 버튼이 요청을 한 번만 보내면 이 알림도 볼 일이 없다 ([backlog D](../design/backlog.md)).
+**문제**: 주문(`ProductDetailPage`)과 결제(`MyActivityPage`)가 클릭마다 `crypto.randomUUID()`로 새 키를 만들었습니다. 서버는 주문을 만들었는데 응답이 유실되면, 사용자가 다시 누를 때 새 키가 나가 서버는 다른 요청으로 보고 **주문을 한 번 더** 만들었습니다.
+
+**해결**: 키를 "클릭 하나"가 아니라 "요청 하나"에 묶었습니다(`frontend/src/idempotency.ts`의 `IdempotencyKeys`). 결과를 모르는 실패(네트워크 오류, 5xx, 409 I003, 본문 읽기 실패)면 키를 남겨 같은 요청 재시도에 쓰고, 성공하거나 서버가 명확히 거절(그 밖의 4xx)하면 버립니다. 키 범위에는 요청 내용(주문은 상품·수량, 결제는 주문 id)을 넣어 같은 키로 다른 본문을 보내는 422를 피합니다. I003이 두 번 이어지면 아래 "남은 한계"의 IN_PROGRESS 잔존으로 보고 키를 버립니다(계속 막히지 않게).
+
+| e2e (`page.route`로 첫 응답을 끊고 다시 누름) | Before | After |
+|---|---|---|
+| 주문: 재시도 요청의 키 | 다름 | **같음** |
+| 주문: 생긴 주문 | **2건** (12, 13) | **1건** (재시도 응답 `Idempotent-Replayed: true`, 같은 주문 id) |
+| 결제: 재시도 요청의 키 (첫 요청은 서버 전에 끊음) | 다름 | **같음**, 200 |
+
+화면 결제하기 버튼의 같은 틱 두 번 클릭은 `useRef` 가드로 막았습니다(결제 요청 2회 → 1회, [PR #23](https://github.com/parkhh16/needs-shop/pull/23)).
+
+**화면 쪽 한계**: 키는 화면 메모리에만 있어 페이지를 떠났다 오면 새 키가 됩니다. 수량을 바꿔 다시 누르는 것도 다른 요청이므로 새 키입니다.
 
 ## 남은 한계
 
-`IN_PROGRESS` 상태로 서버가 죽으면 그 키는 계속 409를 받습니다. 일정 시간이 지난 `IN_PROGRESS` 레코드를 정리하는 작업이 필요합니다.
+- `IN_PROGRESS` 상태로 서버가 죽으면 그 키는 계속 409(I003)를 받습니다. 일정 시간이 지난 `IN_PROGRESS` 레코드를 정리하는 작업이 필요합니다. 화면은 I003이 두 번 이어지면 키를 버려 막히지 않게 했습니다.
+- 주문 처리는 커밋됐는데 바로 뒤 완료 기록(`complete`)이 실패하면 레코드가 지워져, 같은 키로 재시도해도 주문이 하나 더 생길 수 있습니다(DB 장애 순간의 좁은 창).
 
 ## 관련 코드
 
 - [`IdempotencyService`](../../backend/src/main/java/com/needsshop/idempotency/IdempotencyService.java)
 - [`IdempotencyRecord`](../../backend/src/main/java/com/needsshop/idempotency/IdempotencyRecord.java): `UNIQUE(user_id, idempotency_key)`
 - [`PaymentTxService.prepare`](../../backend/src/main/java/com/needsshop/payment/PaymentTxService.java): 주문 상태 변경을 결제 기록보다 먼저 flush
-- 테스트: `OrderApiTest` (`doubleClick`, `replay`, `keyReusedWithDifferentBody`, `payDoubleClickWithDifferentKeys`)
+- [`idempotency.ts`](../../frontend/src/idempotency.ts): 화면의 키 보관(결과를 모르는 실패면 재사용)
+- 테스트: `OrderApiTest` (`doubleClick`, `replay`, `keyReusedWithDifferentBody`, `payDoubleClickWithDifferentKeys`), `frontend/e2e/e2e.mjs` 2-b(응답 유실 후 재시도)
