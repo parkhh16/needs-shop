@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { api, myActivity, type MyActivity, type Order, type OrderStatus } from '../api'
 import { ProductCard } from '../components/ProductCard'
@@ -26,6 +26,7 @@ export function MyActivityPage() {
   const [orders, setOrders] = useState<Order[] | null>(null)
   const [activity, setActivity] = useState<MyActivity | null>(null)
   const [paying, setPaying] = useState<number | null>(null)
+  const inFlight = useRef(false)
 
   const loadOrders = () => api.myOrders().then(r => setOrders(r.data.content)).catch(e => { fail(e); setOrders([]) })
 
@@ -44,7 +45,12 @@ export function MyActivityPage() {
 
   if (!session) return <Navigate to="/" replace />
 
+  /**
+   * 한 번의 클릭 = 멱등 키 하나. paying 상태만으로는 리렌더 전 같은 틱의 두 번째 클릭이 새 키로 통과하므로 ref로도 막는다.
+   */
   const pay = async (o: Order) => {
+    if (inFlight.current) return
+    inFlight.current = true
     setPaying(o.id)
     try {
       const { status, data } = await api.pay(o.id, crypto.randomUUID())
@@ -52,8 +58,11 @@ export function MyActivityPage() {
     } catch (e) {
       fail(e)
     } finally {
-      setPaying(null)
-      loadOrders()
+      // 재조회 전에 풀면 PAYING/PAID가 된 주문에 "결제하기"가 잠깐 활성으로 남으므로 목록을 다시 받은 뒤 푼다 (loadOrders는 항상 resolve)
+      loadOrders().finally(() => {
+        inFlight.current = false
+        setPaying(null)
+      })
     }
   }
 
