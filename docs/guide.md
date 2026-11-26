@@ -26,7 +26,7 @@ npm install
 npm run dev
 ```
 
-- MySQL 프로파일은 `needs_shop` 스키마가 없으면 만들고, Flyway 마이그레이션(V1~V9)을 적용하고, 회원 테이블이 비어 있을 때만 데모 데이터를 넣습니다.
+- MySQL 프로파일은 `needs_shop` 스키마가 없으면 만들고, Flyway 마이그레이션(V1~V11, V7은 결번이라 파일 10개)을 적용하고, 회원 테이블이 비어 있을 때만 데모 데이터를 넣습니다.
 - `GEMINI_API_KEY`를 설정하면 새로 등록하거나 고친 상품에 AI 검색 태그가 붙고(1분 안팎), 관리자 "등록 추천"에서 못 찾은 검색어를 AI로 정리할 수 있습니다. 검색은 키가 없어도 똑같이 동작합니다 (검색할 때는 AI를 부르지 않음). 시드 상품의 태그는 미리 만들어 둔 파일에서 읽습니다. 키는 [Google AI Studio](https://aistudio.google.com)에서 무료로 발급받을 수 있고, 결제를 연결하지 않으면 무료 등급에 머뭅니다. 무료 등급에서는 보낸 내용(상품 정보, 못 찾은 검색어)이 Google 제품 개선에 쓰일 수 있으며, 회원 정보는 보내지 않습니다.
 - 여기까지가 **테스트 환경**(Docker 불필요)입니다. MySQL, 앱, HTTPS 프록시를 컨테이너로 함께 띄우는 **서버 환경**은 [서버 환경 가이드](deploy.md)에 있습니다 (`deploy/docker-compose.yml`).
 
@@ -56,7 +56,7 @@ npm run dev
 
 ```bash
 cd backend
-./gradlew test                                          # 전체 135개, H2 (약 3분)
+./gradlew test                                          # 전체 165개, H2 (2026-11-26 측정 1분 11초)
 DB_PASSWORD=<비밀번호> ./gradlew test -Pdb=mysql         # 같은 테스트를 설치된 MySQL의 needs_shop_test 스키마에서
 ./gradlew test -Pdb=testcontainers                      # 같은 테스트를 Docker로 띄운 MySQL 8.0에서 (Docker 필요, CI와 같음)
 
@@ -145,7 +145,7 @@ node loadtest/order-rush.mjs --strategy ATOMIC_UPDATE --requests 5000 --concurre
 ### 스키마 변경 (Flyway)
 
 - `backend/src/main/resources/db/migration/`에 다음 번호의 파일(`V10__설명.sql`)을 추가하고 엔티티를 맞춥니다. 기존 행을 코드로 채워야 하면 Java 마이그레이션(`backend/src/main/java/db/migration/`, 예: V7)을 씁니다. 서버를 띄울 때 자동으로 적용되고, JPA `validate`가 엔티티와 스키마의 불일치를 잡아냅니다.
-- 이미 적용된 V1~V9 파일은 수정하지 않습니다 (체크섬 불일치로 기동 실패).
+- 이미 적용된 마이그레이션 파일(V1~V11)은 수정하지 않습니다 (체크섬 불일치로 기동 실패).
 - H2와 MySQL 양쪽에서 동작하는 문법만 씁니다 (예: `ALTER TABLE ... ADD COLUMN`은 한 문장에 하나씩).
 
 ## 6. 상품 이미지
